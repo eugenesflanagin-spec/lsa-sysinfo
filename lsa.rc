@@ -1,0 +1,26 @@
+#include <winver.h>
+1 ICON "lsa.ico"
+1 24 "lsa.manifest"
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 0,1,2,0
+PRODUCTVERSION 0,1,2,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "Eugene Flanagin"
+      VALUE "FileDescription", "Linux System Audit - Cache & Memory Benchmark"
+      VALUE "FileVersion", "0.1.2"
+      VALUE "ProductName", "Linux System Audit"
+      VALUE "ProductVersion", "0.1.2"
+      VALUE "LegalCopyright", "GPL-2.0-or-later. Clean-room implementation of AIDA64 features; AIDA64 is by FinalWire Ltd., not affiliated."
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END

@@ -47,6 +47,7 @@ void cm_format_bw(char *b, unsigned long n, int level, double mbs, int mib);
 const char *cm_isa_name(int isa);
 int  cm_isa_best(void);
 int  cm_have_clzero(void);
+int  cm_large_pages(void);   /* 1 when 2 MB pages are available for the latency test */
 extern const char *const cm_level_name[CM_NLEVEL], *const cm_test_name[CM_NTEST];
 
 #endif

@@ -50,12 +50,21 @@ lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]
 
 The benchmark loads every CPU thread and the memory bus for about 20 seconds and asks first.
 
+## Windows
+
+For side-by-side tests on Windows, each release has `lsa-sysinfo-<ver>-setup.exe` (per-user
+install, no admin rights) and a portable zip: `lsa-gui.exe` (the Cache & Memory window, native
+Win32) and `lsa.exe` (command line). Memory latency uses 2 MB large pages only if the account
+has "Lock pages in memory" (secpol.msc -> Local Policies -> User Rights Assignment); otherwise
+4 KB pages, which adds TLB-miss time - the status line shows which was used.
+
 ## Build
 
 ```
 make native            # dist/native/lsa, dist/native/lsa-gui
 make install           # ~/.local
 make install-system DESTDIR=... SYSPREFIX=/usr
+make win-installer win-zip   # Windows: dist/win (mingw-w64-gcc + nsis)
 ```
 
 Dependencies: gtk3, glibc. Optional: srs-sysinfo (`srs-root` DMI cache for memory details).

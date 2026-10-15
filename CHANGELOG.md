@@ -3,6 +3,24 @@
 Linux System Audit is a clean-room Linux implementation of AIDA64 Business features.
 AIDA64 is by FinalWire Ltd. (https://www.aida64.com); Linux System Audit is not affiliated with FinalWire.
 
+## 0.1.2 - 2026-10-15
+
+### Added
+- **Windows build + installer** for side-by-side tests on Windows:
+  `lsa-sysinfo-0.1.2-setup.exe` (per-user install, no administrator rights; Start-menu shortcut,
+  optional desktop shortcut, uninstaller in Apps & features) and a portable zip.
+  - `lsa-gui.exe`: native Win32 Cache & Memory Benchmark window (no runtime needed); Save writes
+    BMP + TXT; history in `%LOCALAPPDATA%\LSA\cachemem-history.txt`.
+  - `lsa.exe`: the command line (`lsa cachemem ...`).
+  - Same benchmark engine; Windows platform layer (QueryPerformanceCounter, thread affinity,
+    GetLogicalProcessorInformationEx). Memory details from SMBIOS (no admin needed).
+  - Latency uses 2 MB large pages only when Windows grants "Lock pages in memory"; otherwise
+    4 KB pages - the status line says which.
+- `make win-installer` / `make win-zip` (mingw-w64 + NSIS).
+
+### Fixed
+- Calibration cap overflowed on 32-bit `long` (Windows).
+
 ## 0.1.1 - 2026-10-15
 
 ### Fixed

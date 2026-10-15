@@ -6,25 +6,279 @@
 #include <cpuid.h>
 #include <immintrin.h>
 #include <pthread.h>
-#include <sched.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sched.h>
+#include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 const char *const cm_level_name[CM_NLEVEL] = { "Memory", "L1 Cache", "L2 Cache", "L3 Cache" };
 const char *const cm_test_name[CM_NTEST] = { "Read", "Write", "Copy", "Latency" };
 
+#ifdef _WIN32
+/* ---------------------------------------------------------------- Windows platform layer */
+static double now_s(void)
+{
+    static LARGE_INTEGER f;
+    LARGE_INTEGER c;
+    if (!f.QuadPart) QueryPerformanceFrequency(&f);
+    QueryPerformanceCounter(&c);
+    return (double)c.QuadPart / (double)f.QuadPart;
+}
+
+typedef DWORD_PTR aff_t;
+static void pin(int cpu) { SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)1 << cpu); }
+static aff_t aff_save(void)
+{
+    DWORD_PTR proc = 0, sys = 0;
+    GetProcessAffinityMask(GetCurrentProcess(), &proc, &sys);
+    return proc;
+}
+static void aff_restore(aff_t a) { SetThreadAffinityMask(GetCurrentThread(), a); }
+
+static int cpu_list(int *cpus, int max)
+{
+    DWORD_PTR proc = 0, sys = 0;
+    int i, n = 0;
+    GetProcessAffinityMask(GetCurrentProcess(), &proc, &sys);
+    for (i = 0; i < (int)(sizeof proc * 8) && n < max; i++) if (proc >> i & 1) cpus[n++] = i;
+    return n;
+}
+
+static SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *lpi(LOGICAL_PROCESSOR_RELATIONSHIP rel, DWORD *len)
+{
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *b;
+    *len = 0;
+    GetLogicalProcessorInformationEx(rel, NULL, len);
+    if (!*len || !(b = malloc(*len))) return NULL;
+    if (!GetLogicalProcessorInformationEx(rel, b, len)) { free(b); return NULL; }
+    return b;
+}
+
+static int popcount_mask(KAFFINITY m) { int n = 0; while (m) { n += (int)(m & 1); m >>= 1; } return n; }
+
+/* data/unified cache of `level` that covers CPU 0: size (KiB) and number of logical CPUs sharing it */
+static void cache_info(int level, long *kib, int *sharers)
+{
+    DWORD len;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *b = lpi(RelationCache, &len), *e;
+    char *p;
+    *kib = level == 1 ? 32 : level == 2 ? 1024 : 8192;
+    *sharers = 1;
+    if (!b) return;
+    for (p = (char *)b; p < (char *)b + len; p += e->Size) {
+        e = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)p;
+        if (e->Cache.Level != level || e->Cache.Type == CacheInstruction) continue;
+        if (!(e->Cache.GroupMask.Group == 0 && (e->Cache.GroupMask.Mask & 1))) continue;
+        *kib = (long)(e->Cache.CacheSize / 1024);
+        *sharers = popcount_mask(e->Cache.GroupMask.Mask);
+        if (*sharers < 1) *sharers = 1;
+        break;
+    }
+    free(b);
+}
+static long cache_kib(int level) { long k; int s; cache_info(level, &k, &s); return k; }
+static int cache_sharers(int level) { long k; int s; cache_info(level, &k, &s); return s; }
+
+/* first logical CPU of every physical core among `cpus` */
+static int core_list(const int *cpus, int n, int *out)
+{
+    DWORD len;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *b = lpi(RelationProcessorCore, &len), *e;
+    char *p;
+    int k = 0, i;
+    if (!b) { for (i = 0; i < n; i++) out[i] = cpus[i]; return n; }
+    for (p = (char *)b; p < (char *)b + len; p += e->Size) {
+        KAFFINITY m;
+        int first = -1;
+        e = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)p;
+        if (e->Processor.GroupMask[0].Group != 0) continue;
+        m = e->Processor.GroupMask[0].Mask;
+        for (i = 0; i < 64; i++) if (m >> i & 1) { first = i; break; }
+        for (i = 0; i < n && first >= 0; i++) if (cpus[i] == first) { out[k++] = first; break; }
+    }
+    free(b);
+    return k ? k : n;
+}
+
+static long mem_available_mib(void)
+{
+    MEMORYSTATUSEX m;
+    m.dwLength = sizeof m;
+    return GlobalMemoryStatusEx(&m) ? (long)(m.ullAvailPhys >> 20) : 0;
+}
+
+/* large (2 MB) pages need the "Lock pages in memory" right (SeLockMemoryPrivilege); without it
+   Windows uses 4 KB pages and the result line says so */
+static int g_large_ok = -1;
+static int large_pages_enable(void)
+{
+    HANDLE tok;
+    TOKEN_PRIVILEGES tp;
+    if (g_large_ok >= 0) return g_large_ok;
+    g_large_ok = 0;
+    if (!GetLargePageMinimum()) return 0;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) return 0;
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    if (LookupPrivilegeValueA(NULL, "SeLockMemoryPrivilege", &tp.Privileges[0].Luid) &&
+        AdjustTokenPrivileges(tok, FALSE, &tp, 0, NULL, NULL) && GetLastError() == ERROR_SUCCESS) g_large_ok = 1;
+    CloseHandle(tok);
+    return g_large_ok;
+}
+
+static void *alloc_pages(size_t bytes, int huge)
+{
+    void *p = NULL;
+    if (huge && large_pages_enable()) {
+        size_t lp = GetLargePageMinimum(), sz = (bytes + lp - 1) / lp * lp;
+        p = VirtualAlloc(NULL, sz, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE);
+    }
+    if (!p) p = VirtualAlloc(NULL, bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    return p;
+}
+static void page_free(void *p) { if (p) VirtualFree(p, 0, MEM_RELEASE); }
+static void *alloc_huge(size_t bytes) { return alloc_pages(bytes, 1); }
+int cm_large_pages(void) { return large_pages_enable(); }
+
+#else
+/* ---------------------------------------------------------------- Linux platform layer */
 static double now_s(void)
 {
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
     return t.tv_sec + t.tv_nsec * 1e-9;
 }
+
+
+typedef cpu_set_t aff_t;
+static aff_t aff_save(void) { cpu_set_t s; sched_getaffinity(0, sizeof s, &s); return s; }
+static void aff_restore(aff_t a) { sched_setaffinity(0, sizeof a, &a); }
+
+static long cache_kib(int level)
+{
+    char p[128], buf[64];
+    int idx;
+    for (idx = 0; idx < 8; idx++) {
+        FILE *f;
+        int lv = 0;
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/level", idx);
+        if (!(f = fopen(p, "r"))) break;
+        if (fscanf(f, "%d", &lv) != 1) lv = 0;
+        fclose(f);
+        if (lv != level) continue;
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/type", idx);
+        if ((f = fopen(p, "r"))) { if (!fgets(buf, sizeof buf, f)) buf[0] = 0; fclose(f); if (!strncmp(buf, "Instruction", 11)) continue; }
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/size", idx);
+        if ((f = fopen(p, "r"))) {
+            long v = 0;
+            char u = 'K';
+            if (fscanf(f, "%ld%c", &v, &u) < 1) v = 0;
+            fclose(f);
+            return u == 'M' ? v * 1024 : v;
+        }
+    }
+    return level == 1 ? 32 : level == 2 ? 1024 : 8192;
+}
+
+/* logical CPUs sharing one instance of this cache level (cpu0's) */
+static int cache_sharers(int level)
+{
+    char p[128], buf[256];
+    int idx, n = 1;
+    for (idx = 0; idx < 8; idx++) {
+        FILE *f;
+        int lv = 0;
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/level", idx);
+        if (!(f = fopen(p, "r"))) break;
+        if (fscanf(f, "%d", &lv) != 1) lv = 0;
+        fclose(f);
+        if (lv != level) continue;
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/shared_cpu_list", idx);
+        if ((f = fopen(p, "r"))) {
+            if (fgets(buf, sizeof buf, f)) {   /* "0,8" / "0-15" / "0-3,16-19" */
+                char *t = buf, *e;
+                n = 0;
+                while (*t && *t != '\n') {
+                    long a = strtol(t, &e, 10), b = a;
+                    if (e == t) break;
+                    if (*e == '-') b = strtol(e + 1, &e, 10);
+                    n += (int)(b - a + 1);
+                    t = *e == ',' ? e + 1 : e;
+                }
+                if (n < 1) n = 1;
+            }
+            fclose(f);
+        }
+        break;
+    }
+    return n;
+}
+
+static int cpu_list(int *cpus, int max)
+{
+    cpu_set_t s;
+    int i, n = 0;
+    if (sched_getaffinity(0, sizeof s, &s)) { long c = sysconf(_SC_NPROCESSORS_ONLN); for (i = 0; i < c && i < max; i++) cpus[n++] = i; return n; }
+    for (i = 0; i < CPU_SETSIZE && n < max; i++) if (CPU_ISSET(i, &s)) cpus[n++] = i;
+    return n;
+}
+
+static void pin(int cpu)
+{
+    cpu_set_t s;
+    CPU_ZERO(&s);
+    CPU_SET(cpu, &s);
+    sched_setaffinity(0, sizeof s, &s);
+}
+
+static void *alloc_pages(size_t bytes, int huge)
+{
+    size_t al = 2u << 20, sz = (bytes + al - 1) / al * al;
+    void *p = NULL;
+    if (posix_memalign(&p, al, sz)) return NULL;
+    madvise(p, sz, huge ? MADV_HUGEPAGE : MADV_NOHUGEPAGE);
+    return p;
+}
+static void *alloc_huge(size_t bytes) { return alloc_pages(bytes, 1); }
+
+/* first logical CPU of every physical core among `cpus` */
+static int core_list(const int *cpus, int n, int *out)
+{
+    int i, k = 0;
+    for (i = 0; i < n; i++) {
+        char p[128];
+        FILE *f;
+        long first = cpus[i];
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", cpus[i]);
+        if ((f = fopen(p, "r"))) { if (fscanf(f, "%ld", &first) != 1) first = cpus[i]; fclose(f); }
+        if (first == cpus[i]) out[k++] = cpus[i];
+    }
+    return k ? k : n;
+}
+
+static long mem_available_mib(void)
+{
+    FILE *f = fopen("/proc/meminfo", "r");
+    char l[256];
+    long kb = 0;
+    if (!f) return 0;
+    while (fgets(l, sizeof l, f)) if (sscanf(l, "MemAvailable: %ld kB", &kb) == 1) break;
+    fclose(f);
+    return kb / 1024;
+}
+
+static void page_free(void *p) { free(p); }
+int cm_large_pages(void) { return 1; }   /* transparent huge pages (madvise) */
+#endif
 
 /* ---------------------------------------------------------------- kernels
  * n is a multiple of 256 bytes, buffers 64-byte aligned. Read ORs every loaded vector into
@@ -184,93 +438,6 @@ static kfn pick(int isa, int test, int mem)
 }
 
 /* ---------------------------------------------------------------- topology */
-static long cache_kib(int level)
-{
-    char p[128], buf[64];
-    int idx;
-    for (idx = 0; idx < 8; idx++) {
-        FILE *f;
-        int lv = 0;
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/level", idx);
-        if (!(f = fopen(p, "r"))) break;
-        if (fscanf(f, "%d", &lv) != 1) lv = 0;
-        fclose(f);
-        if (lv != level) continue;
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/type", idx);
-        if ((f = fopen(p, "r"))) { if (!fgets(buf, sizeof buf, f)) buf[0] = 0; fclose(f); if (!strncmp(buf, "Instruction", 11)) continue; }
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/size", idx);
-        if ((f = fopen(p, "r"))) {
-            long v = 0;
-            char u = 'K';
-            if (fscanf(f, "%ld%c", &v, &u) < 1) v = 0;
-            fclose(f);
-            return u == 'M' ? v * 1024 : v;
-        }
-    }
-    return level == 1 ? 32 : level == 2 ? 1024 : 8192;
-}
-
-/* logical CPUs sharing one instance of this cache level (cpu0's) */
-static int cache_sharers(int level)
-{
-    char p[128], buf[256];
-    int idx, n = 1;
-    for (idx = 0; idx < 8; idx++) {
-        FILE *f;
-        int lv = 0;
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/level", idx);
-        if (!(f = fopen(p, "r"))) break;
-        if (fscanf(f, "%d", &lv) != 1) lv = 0;
-        fclose(f);
-        if (lv != level) continue;
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu0/cache/index%d/shared_cpu_list", idx);
-        if ((f = fopen(p, "r"))) {
-            if (fgets(buf, sizeof buf, f)) {   /* "0,8" / "0-15" / "0-3,16-19" */
-                char *t = buf, *e;
-                n = 0;
-                while (*t && *t != '\n') {
-                    long a = strtol(t, &e, 10), b = a;
-                    if (e == t) break;
-                    if (*e == '-') b = strtol(e + 1, &e, 10);
-                    n += (int)(b - a + 1);
-                    t = *e == ',' ? e + 1 : e;
-                }
-                if (n < 1) n = 1;
-            }
-            fclose(f);
-        }
-        break;
-    }
-    return n;
-}
-
-static int cpu_list(int *cpus, int max)
-{
-    cpu_set_t s;
-    int i, n = 0;
-    if (sched_getaffinity(0, sizeof s, &s)) { long c = sysconf(_SC_NPROCESSORS_ONLN); for (i = 0; i < c && i < max; i++) cpus[n++] = i; return n; }
-    for (i = 0; i < CPU_SETSIZE && n < max; i++) if (CPU_ISSET(i, &s)) cpus[n++] = i;
-    return n;
-}
-
-static void pin(int cpu)
-{
-    cpu_set_t s;
-    CPU_ZERO(&s);
-    CPU_SET(cpu, &s);
-    sched_setaffinity(0, sizeof s, &s);
-}
-
-static void *alloc_pages(size_t bytes, int huge)
-{
-    size_t al = 2u << 20, sz = (bytes + al - 1) / al * al;
-    void *p = NULL;
-    if (posix_memalign(&p, al, sz)) return NULL;
-    madvise(p, sz, huge ? MADV_HUGEPAGE : MADV_NOHUGEPAGE);
-    return p;
-}
-static void *alloc_huge(size_t bytes) { return alloc_pages(bytes, 1); }
-
 /* ---------------------------------------------------------------- bandwidth */
 #define MAXT 512
 typedef struct {
@@ -352,7 +519,7 @@ static double bandwidth(pool *p, int level, int test, int isa, size_t per_thread
         long reps = p->w[0].reps;
         if (cancel && *cancel) return 0;
         t = trial(p);
-        if (t >= 0.04 || reps > (1L << 40)) break;
+        if (t >= 0.04 || reps > (1L << 30)) break;
         reps = t > 0.004 ? (long)(reps * 0.06 / t) + 1 : reps * 8;
         for (i = 0; i < p->n; i++) p->w[i].reps = reps;
     }
@@ -400,21 +567,6 @@ static void *clz_main(void *arg)
     return NULL;
 }
 
-/* first logical CPU of every physical core among `cpus` */
-static int core_list(const int *cpus, int n, int *out)
-{
-    int i, k = 0;
-    for (i = 0; i < n; i++) {
-        char p[128];
-        FILE *f;
-        long first = cpus[i];
-        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", cpus[i]);
-        if ((f = fopen(p, "r"))) { if (fscanf(f, "%ld", &first) != 1) first = cpus[i]; fclose(f); }
-        if (first == cpus[i]) out[k++] = cpus[i];
-    }
-    return k ? k : n;
-}
-
 static double mem_write_clzero(const int *cpus, int ncpu, size_t total, double secs, volatile int *cancel)
 {
     static int cores[MAXT];
@@ -429,7 +581,7 @@ static double mem_write_clzero(const int *cpus, int ncpu, size_t total, double s
     if (!total || !(buf = alloc_huge(total))) return 0;
     memset(buf, 1, total);
     w = calloc((size_t)n, sizeof *w);
-    if (!w) { free(buf); return 0; }
+    if (!w) { page_free(buf); return 0; }
     pthread_barrier_init(&start, NULL, (unsigned)n + 1);
     pthread_barrier_init(&done, NULL, (unsigned)n + 1);
     for (i = 0; i < n; i++) {
@@ -456,7 +608,7 @@ static double mem_write_clzero(const int *cpus, int ncpu, size_t total, double s
     pthread_barrier_destroy(&start);
     pthread_barrier_destroy(&done);
     free(w);
-    free(buf);
+    page_free(buf);
     return best;
 }
 
@@ -539,17 +691,6 @@ void cm_cfg_default(cm_cfg *c)
     c->mb = 1e6;
 }
 
-static long mem_available_mib(void)
-{
-    FILE *f = fopen("/proc/meminfo", "r");
-    char l[256];
-    long kb = 0;
-    if (!f) return 0;
-    while (fgets(l, sizeof l, f)) if (sscanf(l, "MemAvailable: %ld kB", &kb) == 1) break;
-    fclose(f);
-    return kb / 1024;
-}
-
 int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *cancel)
 {
     static int cpus[MAXT];
@@ -622,7 +763,7 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
                        hits); Memory = 4 x L3, at least 256 MB, so it cannot be cache-resident */
                     size_t l3 = (size_t)r->cache_kib[3] * 1024, bytes;
                     char *lb = bufs[0], *own = NULL;
-                    cpu_set_t old;
+                    aff_t old;
                     if (lv == CM_L1) bytes = (size_t)r->cache_kib[1] * 1024 / 2;
                     else if (lv == CM_L2) bytes = (size_t)r->cache_kib[2] * 1024 / 2;
                     else if (lv == CM_L3) {   /* 8 x L2 (mostly L3 hits, still inside the second-level TLB's reach) */
@@ -635,11 +776,11 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
                     own = alloc_pages(bytes, lv == CM_MEM);
                     if (own) { memset(own, 1, bytes); lb = own; }
                     else if (bytes > (per[CM_MEM] > per[CM_L3] ? per[CM_MEM] : per[CM_L3])) bytes = per[CM_MEM] > per[CM_L3] ? per[CM_MEM] : per[CM_L3];
-                    sched_getaffinity(0, sizeof old, &old);
+                    old = aff_save();
                     pin(cpus[0]);
                     r->v[lv][te] = latency(lb, bytes, cfg->seconds, cancel);
-                    sched_setaffinity(0, sizeof old, &old);
-                    free(own);
+                    aff_restore(old);
+                    page_free(own);
                 } else if (lv == CM_MEM && te == CM_WRITE && cfg->mem_write != CM_MW_STREAM && cm_have_clzero()) {
                     r->mem_write = CM_MW_CLZERO;
                     /* block: 256 MB or 2.5 x L3, whichever is larger (well beyond any cache, and the size at which
@@ -659,7 +800,7 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
         pthread_barrier_destroy(&p->start);
         pthread_barrier_destroy(&p->done);
     }
-    for (i = 0; i < n; i++) free(bufs[i]);
+    for (i = 0; i < n; i++) page_free(bufs[i]);
     free(bufs);
     free(p);
     return rc;
