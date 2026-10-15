@@ -1,0 +1,163 @@
+id	category	title	bucket	group	needs_root	linux_source	lsa_overlap	evidence
+comp-summary	hardware	Computer / Summary	LINUX	machine	no	aggregate of all sections; ini [Sum] item list (computertype os hostname username datetime cputype moboname chipset sysmem spdmodules biostype videoadapter 3dacc monitor audioadapter storage ctrl/disks/smart partitions keyboard mouse gamectrl primaryip primarymac netadapter printer usb ctrls battery dmi* customvar)	overview,hardware (sec_siv.c/sec_machine.c)	rpf+pagedesc+ini[Sum]
+comp-name	os	Computer / Computer Name	LINUX	os	no	uname -n; /etc/hostname; hostnamectl; /etc/resolv.conf search domain; realm/sssd	system,domains (sec_os.c)	rpf+pagedesc
+comp-dmi	hardware	Computer / DMI	LINUX	machine	partial	/sys/class/dmi/id/*; /sys/firmware/dmi/tables/DMI (root) - BIOS System Chassis Processors Caches MemoryArrays MemoryDevices SystemSlots PortConnectors OnboardDevices PowerSupplies Cooling/Temp/Voltage/Current probes	bios-tables,machine,system-ids (sec_machine.c)	rpf+pagedesc+treeview
+comp-ipmi	hardware	Computer / IPMI	LINUX	machine	yes	/dev/ipmi0 (ipmi_si/ipmi_devintf); ipmitool sel/sdr; absent on desktop boards	ipmi-info,ipmi-dump (sec_machine.c)	rpf+pagedesc
+comp-overclock	hardware	Computer / Overclock	LINUX	cpu	partial	/proc/cpuinfo; cpufreq scaling_max/cur; /sys/devices/system/cpu/cpu*/cpufreq/amd_pstate_*; MSR via /dev/cpu/*/msr (root); DIMM SPD/EXPO via ee1004/spd5118	cpu-clocks,cpu-speeds,turbo-boost (sec_cpu.c)	rpf+pagedesc
+comp-power	hardware	Computer / Power Management	LINUX	machine	no	/sys/power/state,mem_sleep; /sys/class/power_supply; /sys/firmware/acpi/pm_profile; powerprofilesctl/tuned	power,power-policy,power-scheme (sec_machine.c)	rpf+pagedesc
+comp-portable	hardware	Computer / Portable Computer	LINUX	machine	no	/sys/class/power_supply/BAT*; /sys/class/backlight; chassis_type in DMI	battery (sec_machine.c)	rpf+pagedesc+lang(Portable Computer page)
+comp-sensor	hardware	Computer / Sensor	LINUX	sensors	partial	/sys/class/hwmon/* (nct6775 it87 asus-ec-sensors k10temp zenpower amdgpu nvme drivetemp spd5118 corsair-psu nzxt-kraken aquacomputer_d5next); thermal_zone; see aida_sensor_ids.txt	sensors,cooling,dimm-status,gpu-temp (sec_sensors.c)	rpf+pagedesc+ini OSDItem ids
+mb-cpu	hardware	Motherboard / CPU	LINUX	cpu	no	/proc/cpuinfo; /sys/devices/system/cpu/cpu*/cache; topology; cpufreq; lscpu	processor,cpus,features (sec_cpu.c)	rpf+pagedesc
+mb-cpuid	hardware	Motherboard / CPUID	LINUX	cpu	no	cpuid instruction in-process; /dev/cpu/*/cpuid	cpuid,cpuid-000 (sec_cpu.c)	rpf+pagedesc
+mb-cpuN	hardware	Motherboard / CPU1..CPU4 (per-socket)	LINUX	cpu	no	/sys/devices/system/cpu/cpu*/topology/physical_package_id	cpus (sec_cpu.c)	lang info menuitems (lang-only)
+mb-mobo	hardware	Motherboard / Motherboard	LINUX	machine	no	/sys/class/dmi/id/board_*; DMI type 2/9/8; PCIe root ports via /sys/bus/pci	machine (sec_machine.c)	rpf+pagedesc
+mb-memory	hardware	Motherboard / Memory	LINUX	machine	no	/proc/meminfo; /proc/swaps; /sys/devices/system/memory; zram sysfs	memory,virtual,paging (sec_machine.c)	rpf+pagedesc
+mb-spd	hardware	Motherboard / SPD	LINUX	machine	yes	/sys/bus/i2c/drivers/ee1004 (DDR4) or spd5118 (DDR5) eeprom; decode JEDEC+XMP/EXPO; decode-dimms	spd,dimms,spd-temp (sec_machine.c)	rpf
+mb-chipset	hardware	Motherboard / Chipset	LINUX	bus	no	/sys/bus/pci/devices/0000:00:* class 0600/0601; amd_df/data-fabric; memory controller via EDAC /sys/devices/system/edac/mc	chipsets,mch (sec_bus.c)	rpf+pagedesc
+mb-bios	hardware	Motherboard / BIOS	LINUX	machine	no	/sys/class/dmi/id/bios_*; /sys/firmware/efi; fwupdmgr get-devices	bios-make,uefi-info (sec_machine.c)	rpf+pagedesc
+mb-acpi	hardware	Motherboard / ACPI	LINUX	machine	yes	/sys/firmware/acpi/tables/*; header fields (sig OEM rev size)	acpi-tables (sec_machine.c)	rpf+pagedesc
+os-os	os	Operating System / Operating System	LINUX	os	no	/etc/os-release; uname -a; /proc/cmdline; locale; kernel config; boot time	windows,system (sec_os.c)	rpf+pagedesc
+os-proc	os	Operating System / Processes	LINUX	os	no	/proc/[pid]/{comm,exe,status,statm,cmdline}; cols Process Name / File Name / Used Memory / Used Swap	processes (sec_os.c)	rpf+pagedesc+colcaptions
+os-drivers	os	Operating System / System Drivers	LINUX	os	no	/proc/modules; /sys/module/*/version,srcversion; modinfo	drivers,services-drv (sec_os.c)	rpf+pagedesc
+os-services	os	Operating System / Services	LINUX	os	no	systemctl list-units --type=service (D-Bus org.freedesktop.systemd1)	services-w32 (sec_os.c)	rpf+pagedesc
+os-ax	os	Operating System / AX Files	WINONLY	os	no	DirectShow .ax filters; nearest analogue gst-inspect-1.0 plugin list	-	rpf+pagedesc
+os-dll	os	Operating System / DLL Files	LINUX	os	no	ldconfig -p; /usr/lib/*.so* versions (analogue)	dll (sec_os.c, analogue)	rpf+pagedesc
+os-certs	os	Operating System / Certificates	LINUX	security	no	p11-kit/trust list; /etc/ca-certificates/extracted; openssl x509	-	rpf+pagedesc+lang(Certificates page)
+os-uptime	os	Operating System / UpTime	LINUX	os	no	/proc/uptime; last -x / wtmp; journalctl --list-boots (boot/downtime stats)	time,times (sec_os.c)	rpf+pagedesc
+srv-share	network	Server / Share	LINUX	network	no	smb.conf via testparm -s; /etc/exports; exportfs -v	lm-setup (partial)	rpf+pagedesc
+srv-openfiles	network	Server / Opened Files	LINUX	network	yes	smbstatus -L; /proc/fs/nfsd	files	rpf+pagedesc
+srv-acctsec	os	Server / Account Security	LINUX	security	yes	/etc/login.defs; /etc/security/faillock.conf; pam config; chage -l	-	rpf+pagedesc
+srv-logon	os	Server / Logon	LINUX	os	no	loginctl list-sessions; who; utmp	sessions (sec_os.c)	rpf+pagedesc
+srv-users	os	Server / Users	LINUX	os	no	getent passwd (uid>=1000); /etc/shadow aging (root)	users (sec_os.c)	rpf+pagedesc
+srv-lgroups	os	Server / Local Groups	LINUX	os	no	getent group with members	groups (sec_os.c)	rpf+pagedesc
+srv-ggroups	os	Server / Global Groups	WINONLY	os	no	domain groups (sssd/winbind getent if joined) - else absent	-	rpf+pagedesc
+dsp-winvideo	hardware	Display / Windows Video	LINUX	gpu	no	/sys/class/drm/card*/device (driver, vendor, device, vram via mem_info_vram_total)	graphics,gpu-info (sec_gpu.c)	rpf+pagedesc
+dsp-pcivideo	hardware	Display / PCI / AGP Video	LINUX	gpu	no	/sys/bus/pci/devices class 0300/0302/0380 + pci.ids	pci-dev (sec_bus.c)	rpf+pagedesc
+dsp-gpu	hardware	Display / GPU (GPU1..GPU12)	LINUX	gpu	no	amdgpu sysfs (pp_dpm_*, gpu_metrics, vbios_version, mem_info_*); nvidia-smi/NVML; i915/xe sysfs; PCIe link speed/width	gpu-info,gpu-clocks,gpu-power,gpu-bios (sec_gpu.c)	rpf+pagedesc+lang GPU%d
+dsp-monitor	hardware	Display / Monitor	LINUX	gpu	no	/sys/class/drm/card*-*/edid decode (edid-decode); status; modes	monitors,mon-info (sec_gpu.c)	rpf+pagedesc
+dsp-desktop	os	Display / Desktop	LINUX	gpu	no	wayland: wlr-randr/kscreen-doctor or xrandr; XDG_SESSION_TYPE; DPI; compositor; refresh	metrics (partial)	rpf+pagedesc
+dsp-multimon	hardware	Display / Multi-Monitor	LINUX	gpu	no	DRM connectors + compositor output layout (position upper-left/bottom-right)	monitor-tree	rpf+pagedesc+colcaptions
+dsp-modes	hardware	Display / Video Modes	LINUX	gpu	no	/sys/class/drm/card*-*/modes; EDID detailed timings	-	rpf+pagedesc
+dsp-opengl	software	Display / OpenGL	LINUX	gpu	no	EGL/GLX query (eglinfo/glxinfo); GL_VERSION, extensions, limits	-	rpf+pagedesc
+dsp-gpgpu	software	Display / GPGPU	LINUX	gpu	no	OpenCL ICD (clinfo: rusticl/ROCm/PoCL); HIP/ROCm rocminfo; CUDA if NVIDIA	opencl,gpu-cuda (sec_gpu.c)	rpf+pagedesc
+dsp-mantle	software	Display / Mantle	ABSENT	gpu	no	AMD Mantle API is dead (Windows-only); report not-present	-	rpf+pagedesc
+dsp-vulkan	software	Display / Vulkan	LINUX	gpu	no	libvulkan instance/physical-device enumeration (vulkaninfo --summary)	-	rpf+pagedesc
+dsp-fonts	os	Display / Fonts	LINUX	os	no	fc-list (fontconfig) family/style/charset	fonts (sec_os.c)	rpf+pagedesc+colcaptions
+mm-winaudio	hardware	Multimedia / Windows Audio	LINUX	bus	no	/proc/asound/cards,pcm; PipeWire/Pulse sinks+sources (pactl list short)	audio,sound,wave (sec_bus.c)	rpf+pagedesc
+mm-pciaudio	hardware	Multimedia / PCI / PnP Audio	LINUX	bus	no	PCI class 0401/0403 + USB audio class	pci-dev	rpf+pagedesc
+mm-hdaudio	hardware	Multimedia / HD Audio	LINUX	bus	no	/proc/asound/card*/codec#*; /sys/class/sound/hwC*D*/{vendor_name,chip_name}	uaa-dev (sec_bus.c)	rpf+pagedesc
+mm-openal	software	Multimedia / OpenAL	LINUX	bus	no	openal-soft alcGetString device list	-	rpf+pagedesc
+mm-acodecs	software	Multimedia / Audio Codecs	LINUX	os	no	gst-inspect-1.0 (audio decoders/encoders); ffmpeg -codecs	-	rpf+pagedesc
+mm-vcodecs	software	Multimedia / Video Codecs	LINUX	gpu	no	gst-inspect / ffmpeg codecs + VA-API vainfo / VDPAU / Vulkan video caps	-	rpf+pagedesc
+mm-mci	software	Multimedia / MCI	WINONLY	os	no	Windows Media Control Interface - no analogue	-	rpf+pagedesc
+mm-sapi	software	Multimedia / SAPI	WINONLY	os	no	Windows Speech API - analogue speech-dispatcher modules (optional)	-	rpf
+sto-winstorage	hardware	Storage / Windows Storage	LINUX	storage	no	/sys/block/*/device; lsblk -O; controllers via /sys/class/{nvme,scsi_host,ata_port}	drives,scsi (sec_storage.c)	rpf+pagedesc
+sto-logical	hardware	Storage / Logical Drives	LINUX	storage	no	/proc/self/mountinfo + statvfs; blkid (label fs UUID); cols Drive/Type/Label/FS/Total/Used/Free/%Free	volumes,vol-list,points (sec_storage.c)	rpf+pagedesc+colcaptions
+sto-physical	hardware	Storage / Physical Drives	LINUX	storage	no	/sys/block/* size/model; partition tables via /sys/block/*/*/start,size + libblkid PART type	partitions,geometry (sec_storage.c)	rpf+pagedesc+colcaptions
+sto-optical	hardware	Storage / Optical Drives	LINUX	storage	no	/proc/sys/dev/cdrom/info; SG_IO GET CONFIGURATION	-	rpf+pagedesc
+sto-aspi	hardware	Storage / ASPI	LINUX	storage	no	/proc/scsi/scsi; /sys/class/scsi_device; lsscsi (analogue of ASPI SCSI list)	scsi (sec_storage.c)	rpf+pagedesc
+sto-ata	hardware	Storage / ATA	LINUX	storage	yes	ATA IDENTIFY via SG_IO / hdparm -I; NVMe identify-controller via /dev/nvme*(ioctl NVME_IOCTL_ADMIN_CMD)	stornvme,secnvme (sec_storage.c)	rpf+pagedesc
+sto-smart	hardware	Storage / SMART	LINUX	storage	yes	smartctl -x --json or direct SG_IO/NVMe log page 02; cols ID/Attribute/Threshold/Value/Worst/Data/Status	smart,smart-all (sec_storage.c)	rpf+pagedesc+colcaptions
+net-winnet	network	Network / Windows Network	LINUX	network	no	/sys/class/net/*; ip -j addr/link; ethtool; NetworkManager D-Bus; iw for WLAN	adapters,network,interface (sec_network.c)	rpf+pagedesc
+net-pcinet	network	Network / PCI / PnP Network	LINUX	network	no	PCI class 02xx + USB net	net-cards (sec_network.c)	rpf+pagedesc
+net-ras	network	Network / RAS	LINUX	network	no	NetworkManager VPN/ppp/mobile-broadband connections (nmcli con)	modems (partial)	rpf+pagedesc
+net-resources	network	Network / Net Resources	LINUX	network	no	mounted cifs/nfs/sshfs from mountinfo; avahi-browse	-	rpf+pagedesc
+net-iam	network	Network / IAM	WINONLY	network	no	Outlook/Outlook Express account store; analogue: Thunderbird prefs.js (optional)	e-mail (SIV analogue)	rpf+pagedesc
+net-internet	network	Network / Internet	LINUX	network	no	proxy env vars; gsettings/kioslaverc proxy; /etc/resolv.conf; default browser via xdg-settings	proxy,my-ip-address (sec_network.c)	rpf+pagedesc
+net-routes	network	Network / Routes	LINUX	network	no	/proc/net/route, ipv6_route; ip -j route (Net Destination/Netmask/Gateway/Metric)	routing (sec_network.c)	rpf+pagedesc+colcaptions
+net-iecookie	network	Network / IE Cookie	ABSENT	network	no	Internet Explorer only; analogue Firefox/Chromium cookie DB (privacy - skip by default)	-	rpf+pagedesc
+net-history	network	Network / Browser History	LINUX	network	no	Firefox places.sqlite / Chromium History sqlite (privacy - opt-in only)	-	rpf+pagedesc
+dx-files	software	DirectX / DirectX Files	WINONLY	gpu	no	n/a; Linux analogue Vulkan/GL loader+ICD files (/usr/share/vulkan/icd.d, /usr/share/glvnd)	dxd-fil (SIV WINONLY)	rpf+pagedesc
+dx-video	software	DirectX / DirectX Video	WINONLY	gpu	no	n/a (D3D caps); optional: DXVK/vkd3d presence	d3d-info (WINONLY)	rpf+pagedesc
+dx-sound	software	DirectX / DirectX Sound	WINONLY	bus	no	n/a	dxd-aud (WINONLY)	rpf+pagedesc
+dx-music	software	DirectX / DirectX Music	WINONLY	bus	no	n/a; ALSA sequencer /proc/asound/seq/clients is the MIDI analogue	dxd-mic (WINONLY)	lang-only
+dx-input	software	DirectX / DirectX Input	WINONLY	bus	no	n/a; evdev analogue covered by dev-input	dxd-inp (WINONLY)	rpf+pagedesc
+dx-network	software	DirectX / DirectX Network	WINONLY	network	no	n/a (DirectPlay)	dxd-ply (WINONLY)	lang-only
+dev-windevices	hardware	Devices / Windows Devices	LINUX	bus	no	/sys/devices tree; udevadm info --export-db; driver binding per device	devices,enum,class (sec_bus.c)	rpf+pagedesc
+dev-physical	hardware	Devices / Physical Devices	LINUX	bus	no	PCI+USB+serial/parallel (/sys/class/tty with device link, /sys/class/printer, ppdev)	pci-all,usb-all,serial (sec_bus.c)	rpf+pagedesc
+dev-pci	hardware	Devices / PCI Devices	LINUX	bus	no	/sys/bus/pci/devices/* config + pci.ids; link speed/width	pci-dev,pci-bus (sec_bus.c)	rpf+pagedesc
+dev-usb	hardware	Devices / USB Devices	LINUX	bus	no	/sys/bus/usb/devices/* descriptors + usb.ids; speed; power	usb-dev,usb-tree (sec_bus.c)	rpf+pagedesc
+dev-resources	hardware	Devices / Device Resources	LINUX	bus	no	/proc/interrupts; /proc/ioports; /proc/iomem (root for addresses); /proc/dma; PCI resource files	io-ports,sys-res,pci-bars (sec_bus.c)	rpf+pagedesc
+dev-input	hardware	Devices / Input (Keyboard Mouse Mousepad Headset Headset Stand Game Controller)	LINUX	bus	no	/proc/bus/input/devices; /sys/class/input/*; hidraw; joystick /dev/input/js*	hid-all,joysticks (sec_bus.c)	rpf+pagedesc+lang info menuitems
+dev-printers	hardware	Devices / Printers	LINUX	bus	no	CUPS (lpstat -l -p; IPP via libcups)	-	rpf+pagedesc
+sw-autostart	os	Software / Auto Start	LINUX	os	no	~/.config/autostart, /etc/xdg/autostart *.desktop; systemd --user enabled units; plasma-workspace/env scripts	startup (sec_os.c)	rpf+pagedesc
+sw-scheduled	os	Software / Scheduled	LINUX	os	no	systemctl list-timers --all (system+user); crontab -l; /etc/cron.*; at queue	-	rpf+pagedesc
+sw-installed	os	Software / Installed Programs	LINUX	os	no	pacman -Qi (/var/lib/pacman/local/*/desc) + flatpak list + snap; cols Program/Version/Inst.Size/Inst.Date/Publisher	software (sec_os.c)	rpf+pagedesc+colcaptions
+sw-custom	os	Software / Custom Programs	LINUX	os	no	user-configured list of program paths/version probes (pref Custom Program)	-	rpf+pagedesc+TFORM_PREFERENCES_CUSTOMPROGRAM
+sw-filescan	os	Software / File Scanner	LINUX	os	no	configurable find over scope with filters (ini FileScanner*: COM/EXE DLL Audio Video Misc mask size) + file properties (FileProp*)	-	rpf+pagedesc+ini FileScanner*
+sw-licenses	os	Software / Licenses	LINUX	os	no	pacman package License field (/usr/share/licenses); Windows product keys = ABSENT	products (WINONLY analogue)	rpf+pagedesc
+sw-filetypes	os	Software / File Types	LINUX	os	no	/usr/share/mime + ~/.config/mimeapps.list (Extension/Content Type/Description/default app)	-	rpf+pagedesc+colcaptions
+sw-gadgets	os	Software / Desktop Gadgets	WINONLY	os	no	Windows Sidebar gadgets; analogue Plasma widgets (plasma-org.kde.plasma.desktop-appletsrc) optional	-	rpf+pagedesc
+sec-winsec	os	Security / Windows Security	LINUX	security	no	/sys/kernel/security/lsm; SELinux/AppArmor status; Secure Boot via efivars SecureBoot-*; /sys/devices/system/cpu/vulnerabilities; kernel lockdown	speculation (sec_cpu.c)	rpf+pagedesc
+sec-update	os	Security / Windows Update	LINUX	security	no	/var/log/pacman.log upgrade history; checkupdates (no network by default)	-	rpf+pagedesc
+sec-av	os	Security / Anti-Virus	LINUX	security	no	clamav: clamd status + freshclam DB date (/var/lib/clamav/*.cvd header) - Software Version / Database Date / Known Viruses	-	rpf+pagedesc+colcaptions
+sec-firewall	os	Security / Firewall	LINUX	security	yes	nft list ruleset / firewalld D-Bus / ufw status	firewall	rpf+pagedesc
+sec-antispy	os	Security / Anti-Spyware	ABSENT	security	no	no Linux category; report none (rkhunter/chkrootkit presence optional)	-	rpf+pagedesc
+sec-antitrojan	os	Security / Anti-Trojan	ABSENT	security	no	no Linux category; report none	-	rpf+pagedesc
+cfg-regional	os	Config / Regional	LINUX	os	no	localectl; locale; /etc/locale.conf; timedatectl (time zone)	locales,zones (sec_os.c)	rpf+pagedesc
+cfg-env	os	Config / Environment	LINUX	os	no	/proc/self/environ; /etc/environment; environment.d	environment (sec_os.c)	rpf+pagedesc
+cfg-cpl	os	Config / Control Panel	LINUX	os	no	analogue: systemsettings KCMs (kcmshell6 --list) / *.desktop Categories=Settings	-	rpf+pagedesc
+cfg-recycle	os	Config / Recycle Bin	LINUX	os	no	~/.local/share/Trash (+ $topdir/.Trash-$uid); items count/size	-	rpf+pagedesc+colcaptions
+cfg-sysfiles	os	Config / System Files	LINUX	os	no	content of /etc/fstab /etc/hosts /etc/mkinitcpio.conf /etc/default/grub etc. (analogue of boot.ini/hosts/win.ini)	-	rpf+pagedesc
+cfg-sysfolders	os	Config / System Folders	LINUX	os	no	XDG base dirs + xdg-user-dirs; /usr /etc /var paths	folders (sec_os.c)	rpf+pagedesc
+cfg-eventlogs	os	Config / Event Logs	LINUX	os	partial	sd-journal (journalctl -o json) priority filter (ini ELFilter Days/Info/Warn/Error/Audit)	-	rpf+pagedesc+ini ELFilter*
+db-software	software	Database / Database Software	LINUX	os	no	detect installed postgres/mariadb/sqlite/mongodb via pacman + binaries --version	-	rpf
+db-drivers	software	Database / Database Drivers	LINUX	os	no	JDBC/ODBC/sqlalchemy drivers present (unixODBC odbcinst.ini)	-	lang-only
+db-bde	software	Database / BDE Drivers	WINONLY	os	no	Borland Database Engine - Windows only	-	rpf+pagedesc
+db-odbcdrv	software	Database / ODBC Drivers	LINUX	os	no	odbcinst -q -d; /etc/odbcinst.ini	-	rpf+pagedesc
+db-odbcdsn	software	Database / ODBC Data Sources	LINUX	os	no	odbcinst -q -s; /etc/odbc.ini ~/.odbc.ini	-	rpf+pagedesc
+bench-memread	bench	Benchmark / Memory Read	LINUX	bench	no	own multithreaded streaming read kernel (AVX2/AVX-512 non-temporal) over buffer >> LLC; result MB/s + reference table	latency (partial bench.c)	rpf+pagedesc; bench64 Bench_MTMBW*
+bench-memwrite	bench	Benchmark / Memory Write	LINUX	bench	no	own write kernel (NT stores)	-	rpf+pagedesc; Bench_MTMBW*
+bench-memcopy	bench	Benchmark / Memory Copy	LINUX	bench	no	own copy kernel	-	rpf+pagedesc; Bench_MTMBW*
+bench-memlat	bench	Benchmark / Memory Latency	LINUX	bench	no	pointer-chase random walk in hugepage buffer (THP madvise) ns	latency (bench.c)	rpf+pagedesc; Bench_NGMemLat
+bench-checkmate	bench	Benchmark / CPU CheckMate (formerly CPU Queen - inferred)	LINUX	bench	no	own chess-problem solver (N-queens 16x16 per page desc) all threads	-	rpf; desc inferred; Bench_NGQueen
+bench-photoworxx	bench	Benchmark / CPU PhotoWorxx	LINUX	bench	no	own 2D image-processing pipeline (fill/invert/rotate/blend etc.) memory-heavy	-	rpf+pagedesc; Bench_NGImage2D
+bench-zlib	bench	Benchmark / CPU ZLib	LINUX	bench	no	zlib deflate (system libz) MB/s multi-thread	-	rpf+pagedesc; Bench_NGPack / Base_ZLib_1_2_5
+bench-aes	bench	Benchmark / CPU AES	LINUX	bench	no	AES-256 (AES-NI/VAES) ECB/CTR MB/s multi-thread	-	rpf+pagedesc; Bench_NGAES
+bench-sha3	bench	Benchmark / CPU SHA3	LINUX	bench	no	SHA3-256 (Keccak) MB/s multi-thread	-	rpf+pagedesc; Bench_Hash2
+bench-julia	bench	Benchmark / FPU Julia	LINUX	bench	no	FP32 Julia fractal SIMD kernel	-	rpf+pagedesc; Bench_NGFractal
+bench-mandel	bench	Benchmark / FPU Mandel	LINUX	bench	no	FP64 Mandelbrot SIMD kernel	-	rpf+pagedesc; Bench_NGFractal
+bench-sinjulia	bench	Benchmark / FPU SinJulia	LINUX	bench	no	extended-precision (x87 80-bit) custom Julia with sin()	-	rpf+pagedesc; Bench_NGFractal
+bench-fp32rt	bench	Benchmark / FP32 Ray-Trace	LINUX	bench	no	own FP32 ray tracer SIMD	-	rpf+pagedesc; Bench_RayTrace
+bench-fp64rt	bench	Benchmark / FP64 Ray-Trace	LINUX	bench	no	own FP64 ray tracer SIMD	-	rpf+pagedesc; Bench_RayTrace
+bench-hash-legacy	bench	Benchmark / CPU Hash (legacy)	LINUX	bench	no	SHA-1 style hash (older page; not in 7.65 rpf)	-	pagedesc; Bench_Hash
+bench-vp8-legacy	bench	Benchmark / CPU VP8 (legacy)	LINUX	bench	no	libvpx VP8 encode fps (not in 7.65 rpf)	-	pagedesc only
+bench-fpuvp8-legacy	bench	Benchmark / FPU 2D image (legacy)	LINUX	bench	no	complex 2D image FP kernel (not in 7.65 rpf)	-	pagedesc only
+bench-reference	bench	Benchmark reference results + save/compare	LINUX	bench	no	bundled reference table of other CPUs (own measured data only - AIDA DB is encrypted and must not be copied); ini HideBenchRef/LimitBenchRef; save/compare results (lang section)	-	lang(Benchmark results save & compare)+ini
+tool-diskbench	tools	Tools / Disk Benchmark	LINUX	storage	yes	O_DIRECT reads on block device or file: Linear/Random/Buffered read, average access time, write tests (destructive - require confirm); io_uring	performance (sec_storage.c, partial)	app menuitems+TFORM_DISKBENCH+DISKBENCH_ABOUT_TEXT
+tool-cachemem	tools	Tools / Cache and Memory Benchmark	LINUX	bench	no	grid Memory/L1/L2/L3 x Read/Write/Copy/Latency + CPU Type/Stepping/Clock/FSB/Multiplier/NB Clock/Memory Bus/DRAM:FSB/Memory Type/Chipset/Motherboard/BIOS; buffer sizes from /sys/devices/system/cpu/cpu0/cache/index*/size	latency (bench.c partial)	app menuitems+TFORM_CACHEMEMBENCHSUITE+cachemem*.png
+tool-gpgpu	tools	Tools / GPGPU Benchmark	LINUX	gpu	no	OpenCL (rusticl/ROCm) or Vulkan compute kernels per device + CPU path: Memory Read/Write/Copy, FP32/FP64 FLOPS, 24/32/64-bit IOPS, AES-256, SHA-1 Hash, SP Julia, DP Mandel; Results window	opencl (info only)	app menuitems+TFORM_GPGPUBENCHSUITE(_RESULTS)+gpgpu.png+lang FLOPS/IOPS labels
+tool-sst	tools	Tools / System Stability Test	LINUX	tools	no	stress CPU/FPU/cache/memory/disk/GPU threads + live graphs (Temperatures/Cooling Fans/Voltages/Powers/Clocks/Unified/Statistics per sst.ini Temp/Fan/Volt/Curr/Pwr/Flow/LiqL/Clk/Uni slots 01-14 with min/max/thick) ; mem alloc % ; AVX/AVX-512 toggles; CPU mask	burner.c (srs-burnin)	app menuitems+TFORM_STABILITYTEST(_PREFERENCES)+aida64.sst.ini+bench64 Bench_SST2
+tool-mondiag	tools	Tools / Monitor Diagnostics	LINUX	gpu	no	fullscreen test patterns per output (GTK/SDL) incl. secondary monitor + auto mode interval (mondiag.ini AutoModeInterval MultiMon)	-	app menuitems+TFORM_MONDIAG*+aida64.mondiag.ini
+tool-cpuid	tools	Tools / AIDA64 CPUID panel	LINUX	cpu	no	compact CPU/board/memory summary window from cpuid+sysfs+dmi	cpuid (sec_cpu.c)	app menuitems+TFORM_CPUID
+tool-acpibrowser	tools	Tools / ACPI Browser	LINUX	machine	yes	/sys/firmware/acpi/tables + iasl disassembly; query (TFORM_ACPITOOL_QUERY)	acpi-tables,acpi-methods (sec_machine.c)	app menuitems+TFORM_ACPITOOL*
+tool-dramtimings	tools	Tools / DRAM Timings	LINUX	machine	yes	AMD UMC regs via /dev/mem or zentimings-style SMN (amd_smn/ryzen_smu) ; Intel MCHBAR; else SPD only	mem-tweak (sec_machine.c)	app menuitems+TFORM_DRAMTIMINGS
+tool-sensorpanel	tools	Tools / SensorPanel (+ Manager / Item / Defaults)	LINUX	sensors	no	own GTK panel of gauge/bar/graph/text items bound to sensor IDs (ini HWMonSP* HWMonSPItem); .spzip import (sensorpanel_default.spzip format - not parsed here)	-	TFORM_HWMONITORINGSENSORPANEL/SENSORPANELMANAGER/ITEM/DEFAULTS+ini
+tool-osd	tools	Tools / OSD panel	LINUX	sensors	no	overlay window (layer-shell on Wayland) ; per-item SHOW/FONTNAME/FGCOLOR/TEXTSIZE/BOLD/ITALIC (ini OSDItem_<ID>)	-	TFORM_HWMONITORINGOSD+ini OSDItem_*
+tool-vsb	tools	Tools / Desktop Gadget (VSB sidebar)	LINUX	sensors	no	Plasma widget / tray tooltip; ini VSBItem_<ID>	-	ini VSBItem_*+aida_vsb.vsb+lang Desktop Gadget
+tool-sensoricons	tools	Tools / Sensor tray icons	LINUX	sensors	no	StatusNotifierItem icons per sensor (ini SensorIcon_<ID> SHOW FGCOLOR BGCOLOR)	-	ini SensorIcon_*+lang sensor icons
+tool-lcd	tools	Tools / External LCD support (~70 vendors)	ABSENT	sensors	no	vendor LCDs (Logitech G LCD Razer Matrix Orbital Corsair etc. per ini HWMonEnable??LCD) - mostly Windows SDKs; optional USB-serial ones via libusb	-	ini HWMonEnable*LCD
+tool-rgbled	tools	Tools / RGB LED sensor mapping	LINUX	sensors	no	OpenRGB SDK client	-	ini HWMonEnableRGBLED+TFORM_PREFERENCES_RGBLEDITEM
+tool-logging	tools	Tools / Sensor logging (HTML/CSV)	LINUX	sensors	no	periodic CSV/HTML log (ini HWMonLogToHTM/CSV LogItems LogProcesses PersistentLog)	sen-export (sec_sensors.c)	ini HWMonLog*
+tool-extapp	tools	Tools / External applications export	LINUX	sensors	no	shared memory (POSIX shm) / D-Bus / Prometheus textfile instead of Registry/WMI/RTSS (ini HWMonEnableSharedMem Registry WMI RTSS)	sen-export	ini HWMonEnable*/HWMonExtAppItems
+tool-alerting	tools	Tools / Sensor alerting	LINUX	sensors	no	threshold rules -> notify-send / log / email / shutdown (TFORM_PREFERENCES_HWMALERTINGITEM)	-	lang alerting+ini HWMonEnableAlerting
+tool-correction	tools	Tools / Sensor correction (offset/ratio)	LINUX	sensors	no	per-sensor multiply/offset (like lm_sensors compute)	formula-setup (SIV analogue)	lang section+TFORM_PREFERENCES_HWMCORRECTIONITEM
+tool-hotkeys	tools	Tools / Hot keys	LINUX	tools	no	KGlobalAccel / xdg-desktop-portal GlobalShortcuts (ini HotKeyShowOSD ... ResetSPPos)	-	ini HotKey*
+tool-reportwizard	tools	Tools / Report Wizard + Quick Report	LINUX	tools	no	profiles AllPages/System Summary/Hardware/Software/Benchmark/Custom/Load profile (rpf); formats Plain text / HTML / MHTML / CSV / XML (+XSL) / MIF? ; send via email/FTP/upload	-r report (cli.c)	lang report wizard+TFORM_REPORTWIZARD1-6+aida64.rpf+ini Report*
+tool-reportconv	tools	Tools / Report Converter	LINUX	tools	no	convert saved reports between formats	-	lang report converter+TFORM_REPORTCONVERTER
+tool-auditmgr	tools	Tools / Audit Manager	LINUX	tools	no	aggregate many reports (CSV/DB) -> computers/users/statistics details/diagram/compare list/full HTML	-	lang audit manager+TFORM_AUDITMANAGER*+TFORM_STATISTICS*
+tool-changemgr	tools	Tools / Change Manager	LINUX	tools	no	diff reports over time per host	-	lang change manager+TFORM_CHANGEMANAGER*
+tool-dbmgr	tools	Tools / Database Manager (SQL report store)	LINUX	tools	no	SQL tables Report(ID RVersion RHost RHostComment RUser RLocation RDateTime RComplete) Item(INum IPage IDevice IGroup IField IValue IIcon IID ReportID) NextID ; sqlite/postgres via ODBC or native	-	SQL_Schema/*.sql (plain text)+ini ADO*+TFORM_DATABASEMANAGER
+tool-remote	tools	Tools / Remote (connect/monitor/report/control/processes/screenshot/messages/run program/services)	LINUX	network	no	own TCP agent with password+rule (ini RemotePort I/M/R/C RemotePassword* RemoteSecurityRule RC*); prefer ssh-based	-	lang remote*+TFORM_CNS_*
+tool-alerts-audit	tools	Tools / Audit alerts (asset triggers)	LINUX	tools	no	triggers VirDB SysDrvSpace LocDrvSpace LocDrvTemp InstPrg Service AutoStart Share PCIDev USBDev SMARTFail SysMemSize HostName WinlogonShell -> methods DisplayWindow SendEmail LogToServer WinMsg TXT HTM	-	ini AlertTrigger*/AlertMethod*
+tool-netupdate	tools	Tools / Internet update + HW DB status	ABSENT	tools	no	vendor update channel; use distro packaging instead	-	lang internet update/hardware database status
+tool-pstates	tools	Tools / P-States monitor + CPU bench (name only)	LINUX	cpu	no	cpufreq/amd_pstate per-core freq over time	cpu-levels,power-states	TFORM_PSTATESMONITOR(_CPUBENCH) name only
+tool-cpuclockmon	tools	Tools / CPU clock monitor (name only)	LINUX	cpu	no	APERF/MPERF via /dev/cpu/*/msr or cpufreq	cpu-clocks	TFORM_CPUCLOCKMONITOR name only
+tool-perfmon	tools	Tools / Performance monitor (name only)	LINUX	os	no	/proc/stat /proc/vmstat perf counters	-	TFORM_PERFMON name only
+tool-scalability	tools	Tools / Benchmark scalability (name only)	LINUX	bench	no	run bench at 1..N threads, plot	benchmark-ac/-as	TFORM_SCALABILITY name only
+tool-msr	tools	Tools / Tweakings RDMSR/WRMSR (name only)	LINUX	cpu	yes	/dev/cpu/*/msr read (write gated - never by default)	msrs,cpu-tweak	TFORM_TWEAKINGS(_RDMSR/_WRMSR) name only
+tool-syslog	tools	Tools / Syslog / Debug dump (name only)	LINUX	tools	no	own debug dump of raw sources (PCI config DMI SMBus) for bug reports	-	TFORM_SYSLOG/TFORM_DEBUGDUMP name only
+tool-instlat	tools	Tools / Instruction latency/throughput dump (hidden, name only)	LINUX	cpu	no	own per-instruction latency microbench (~3160 x86 instruction forms listed in bench DLL strings)	-	bench64 Bench_InstLat/Bench_NGInstLat + instruction strings
+tool-prefs	tools	Preferences (General Layout Report Email/SMTP FTP ADO Remote FileScanner FileProp Alerting HWMon* Fonts Theme)	LINUX	tools	no	own config file (~/.config/lsa/lsa.ini) mirroring sections	-	lang preferences(246 keys)+TFORM_PREFERENCES*+aida64.ini
+tool-customvars	tools	Custom variables / remarks / custom components / asset profile	LINUX	tools	no	user-defined key=value merged into Summary and reports	-	lang custom variables+aida64.customvars.ini (empty)+TFORM_PREFERENCES_CUSTOMVARIABLE/REMARK/CUSTOMCOMPONENT/ASSETPROFILE
+tool-cli	tools	Command-line options	LINUX	tools	no	"NOT recoverable from local files (exe resources encrypted); only menu label ""Command-line Options"" exists. Task-named switches /R /ALL /TEXT /HTML /CSV /SAFE etc. are UNVERIFIED - confirm from Help > Command-line Options"	cli.c	lang app menuitems only

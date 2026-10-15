@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=LSA Cache & Memory Benchmark
+GenericName=Cache and Memory Benchmark
+Comment=Read / Write / Copy / Latency of memory and L1-L3 caches. Clean-room Linux implementation of AIDA64 features (AIDA64 by FinalWire Ltd.; not affiliated)
+Exec=lsa-gui
+Icon=lsa
+Terminal=false
+Categories=System;Monitor;
+Keywords=benchmark;memory;cache;latency;bandwidth;aida64;
