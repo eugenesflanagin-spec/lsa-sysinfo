@@ -3,6 +3,19 @@
 Linux System Audit is a clean-room Linux implementation of AIDA64 Business features.
 AIDA64 is by FinalWire Ltd. (https://www.aida64.com); Linux System Audit is not affiliated with FinalWire.
 
+## 0.1.1 - 2026-10-15
+
+### Fixed
+- **Memory Write was ~3x too low on AMD** (33 GB/s vs ~93 GB/s). Streaming stores stop at the
+  core-to-memory link's write limit (~16 B per fabric clock on Zen). On AMD CPUs with CLZERO,
+  Memory Write now uses CLZERO (whole zeroed cache lines written to DRAM): one thread per
+  physical core, threads interleaved in 4 KB chunks over a shared block of 256 MB or 2.5 x L3,
+  best complete pass. Same-machine result: ~93,000 MB/s, matching the reference.
+  `--mem-write stream` still shows the streaming-store figure; other CPUs keep streaming stores.
+
+### Changed
+- Read kernels use plain vector loads (no OR accumulation): L1 Read +7%, L2 Read +4%.
+
 ## 0.1.0 - 2026-10-15
 
 ### Added

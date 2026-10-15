@@ -11,6 +11,7 @@ static void usage(void)
 {
     puts("usage: lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]\n"
          "                    [--only mem|l1|l2|l3[,..]] [--tests read,write,copy,latency] [--mib]\n"
+         "                    [--mem-write auto|clzero|stream]\n"
          "       lsa --version\n\n"
          "cachemem  Cache & Memory benchmark: Read / Write / Copy (MB/s) and Latency (ns) of\n"
          "          Memory, L1, L2 and L3. Uses every CPU thread and the memory bus for ~20 s.");
@@ -37,6 +38,7 @@ static int cmd_cachemem(int argc, char **argv)
         else if (!strcmp(a, "--seconds")) { c.seconds = atof(v); i++; }
         else if (!strcmp(a, "--mem-mib")) { c.mem_mib = atol(v); i++; }
         else if (!strcmp(a, "--mib")) c.mb = 1048576.0;
+        else if (!strcmp(a, "--mem-write")) { c.mem_write = !strcmp(v, "stream") ? CM_MW_STREAM : !strcmp(v, "clzero") ? CM_MW_CLZERO : CM_MW_AUTO; i++; }
         else if (!strcmp(a, "--isa")) { c.isa = !strcmp(v, "avx512") ? CM_ISA_AVX512 : !strcmp(v, "avx2") ? CM_ISA_AVX2 : CM_ISA_SSE2; i++; }
         else if (!strcmp(a, "--only")) {
             lvmask |= strstr(v, "mem") ? 1u << CM_MEM : 0; lvmask |= strstr(v, "l1") ? 1u << CM_L1 : 0;
@@ -71,9 +73,10 @@ static int cmd_cachemem(int argc, char **argv)
     }
     printf("\nCPU Type         %s\nCPU Stepping     %s\nCPU Clock        %s\nCPU FSB          %s  (multiplier %s)\n"
            "NB Clock         %s\nMemory Bus       %s  %s\nMemory Type      %s\nChipset          %s\n"
-           "Motherboard      %s\nBIOS Version     %s\nCode path        %s, %d threads; L1d %ld KB, L2 %ld KB, L3 %ld KB\n",
+           "Motherboard      %s\nBIOS Version     %s\nCode path        %s, %d threads; L1d %ld KB, L2 %ld KB, L3 %ld KB%s\n",
            in.cpu_type, in.cpu_stepping, in.cpu_clock, in.cpu_fsb, in.cpu_mult, in.nb_clock, in.mem_bus, in.dram_ratio,
-           in.mem_type, in.chipset, in.board, in.bios, cm_isa_name(r.isa), r.threads, r.cache_kib[1], r.cache_kib[2], r.cache_kib[3]);
+           in.mem_type, in.chipset, in.board, in.bios, cm_isa_name(r.isa), r.threads, r.cache_kib[1], r.cache_kib[2], r.cache_kib[3],
+           r.mem_write == CM_MW_CLZERO ? "; Memory Write: CLZERO, one thread per core" : r.mem_write == CM_MW_STREAM ? "; Memory Write: streaming stores" : "");
     return 0;
 }
 

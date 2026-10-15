@@ -149,3 +149,12 @@ Fabric 32 B/clk read and 16 B/clk write per CCD):
 
 Linux System Audit's own code was then written to those conventions; its numbers are verified by
 side-by-side runs on the same machine, not copied.
+
+## 7. Memory Write method (found by measurement, 2026-10-15)
+
+The user's AIDA64 run on this machine showed Memory Write ~93,000 MB/s, above the Zen 4 fabric
+write limit (~33 GB/s measured with streaming stores). Linux System Audit measured every write
+method on the same machine (16 threads unless noted): streaming stores 33.5 GB/s, ordinary
+stores 32.4, `rep stosb` 34.8, **CLZERO 81 GB/s**; CLZERO with one thread per core and a 4 KB
+interleave over 256 MB reached 92.6-93.2 GB/s when each full pass is timed. Only CLZERO can
+exceed the link limit, so it is the method used for Memory Write on AMD CPUs that have it.

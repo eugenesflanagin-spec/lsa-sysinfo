@@ -25,7 +25,11 @@ and tools follow; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 planned items.
 - **Read / Write / Copy**: one thread pinned to every logical CPU, AVX-512 / AVX2 / SSE2 code
   picked at run time. Each thread works in its own block, sized to stay inside the cache level
   (half of its share of L1 / L2 / L3) or, for Memory, a block of at least 4 x L3 (min. 256 MB,
-  default 1 GB) so it cannot be cache-resident. Memory Write / Copy use streaming stores.
+  default 1 GB) so it cannot be cache-resident. Memory Copy uses streaming stores. **Memory
+  Write** on AMD CPUs with CLZERO writes zeroed cache lines (one thread per core, 4 KB
+  interleave, 256 MB or 2.5 x L3 block, best full pass) - what the memory itself absorbs, since
+  streaming stores stop at the core-to-memory link's write limit; `--mem-write stream` shows
+  that figure. Other CPUs use streaming stores.
   **Copy counts bytes read + bytes written**, the usual convention for this benchmark.
   The best of repeated ~40-80 ms trials over ~1 s per cell is shown. Memory in MB/s, caches in
   GB/s (1 MB = 1,000,000 bytes; `--mib` for binary units).
@@ -41,6 +45,7 @@ and tools follow; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 planned items.
 ```
 lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]
              [--only mem,l1,l2,l3] [--tests read,write,copy,latency] [--mib]
+             [--mem-write auto|clzero|stream]
 ```
 
 The benchmark loads every CPU thread and the memory bus for about 20 seconds and asks first.

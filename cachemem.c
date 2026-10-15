@@ -31,18 +31,14 @@ static double now_s(void)
  * four accumulators (so no load can be optimised away) and stores the result to `sink`. */
 typedef void (*kfn)(char *dst, const char *src, size_t n, char *sink);
 
+/* Read: plain vector loads into registers (asm, so they cannot be optimised away and add no ALU work) */
 __attribute__((target("avx512f"))) static void rd_512(char *d, const char *s, size_t n, char *sink)
 {
-    __m512i a = _mm512_setzero_si512(), b = a, c = a, e = a;
     size_t i;
-    (void)d;
-    for (i = 0; i < n; i += 256) {
-        a = _mm512_or_si512(a, _mm512_load_si512((const void *)(s + i)));
-        b = _mm512_or_si512(b, _mm512_load_si512((const void *)(s + i + 64)));
-        c = _mm512_or_si512(c, _mm512_load_si512((const void *)(s + i + 128)));
-        e = _mm512_or_si512(e, _mm512_load_si512((const void *)(s + i + 192)));
-    }
-    _mm512_storeu_si512((void *)sink, _mm512_or_si512(_mm512_or_si512(a, b), _mm512_or_si512(c, e)));
+    (void)d; (void)sink;
+    for (i = 0; i < n; i += 256)
+        __asm__ volatile("vmovdqa64 (%0), %%zmm0\n\tvmovdqa64 64(%0), %%zmm1\n\tvmovdqa64 128(%0), %%zmm2\n\tvmovdqa64 192(%0), %%zmm3"
+                         : : "r"(s + i) : "xmm0", "xmm1", "xmm2", "xmm3");
 }
 __attribute__((target("avx512f"))) static void wr_512(char *d, const char *s, size_t n, char *sink)
 {
@@ -92,16 +88,12 @@ __attribute__((target("avx512f"))) static void cpnt_512(char *d, const char *s, 
 #define AVX2_LOOP(BODY) for (i = 0; i < n; i += 256) { BODY(0) BODY(32) BODY(64) BODY(96) BODY(128) BODY(160) BODY(192) BODY(224) }
 __attribute__((target("avx2"))) static void rd_256(char *d, const char *s, size_t n, char *sink)
 {
-    __m256i a = _mm256_setzero_si256(), b = a, c = a, e = a;
     size_t i;
-    (void)d;
-    for (i = 0; i < n; i += 256) {
-        a = _mm256_or_si256(a, _mm256_load_si256((const void *)(s + i)));       b = _mm256_or_si256(b, _mm256_load_si256((const void *)(s + i + 32)));
-        c = _mm256_or_si256(c, _mm256_load_si256((const void *)(s + i + 64)));  e = _mm256_or_si256(e, _mm256_load_si256((const void *)(s + i + 96)));
-        a = _mm256_or_si256(a, _mm256_load_si256((const void *)(s + i + 128))); b = _mm256_or_si256(b, _mm256_load_si256((const void *)(s + i + 160)));
-        c = _mm256_or_si256(c, _mm256_load_si256((const void *)(s + i + 192))); e = _mm256_or_si256(e, _mm256_load_si256((const void *)(s + i + 224)));
-    }
-    _mm256_storeu_si256((void *)sink, _mm256_or_si256(_mm256_or_si256(a, b), _mm256_or_si256(c, e)));
+    (void)d; (void)sink;
+    for (i = 0; i < n; i += 256)
+        __asm__ volatile("vmovdqa (%0), %%ymm0\n\tvmovdqa 32(%0), %%ymm1\n\tvmovdqa 64(%0), %%ymm2\n\tvmovdqa 96(%0), %%ymm3\n\t"
+                         "vmovdqa 128(%0), %%ymm4\n\tvmovdqa 160(%0), %%ymm5\n\tvmovdqa 192(%0), %%ymm6\n\tvmovdqa 224(%0), %%ymm7"
+                         : : "r"(s + i) : "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #define W256(o) _mm256_store_si256((void *)(d + i + (o)), v);
 #define WNT256(o) _mm256_stream_si256((void *)(d + i + (o)), v);
@@ -136,6 +128,26 @@ static void wr_128(char *d, const char *s, size_t n, char *sink) { __m128i v = _
 static void wrnt_128(char *d, const char *s, size_t n, char *sink) { __m128i v = _mm_set1_epi32(0x5A5A5A5A); size_t i; (void)s; (void)sink; SSE_LOOP(WNT128) _mm_sfence(); }
 static void cp_128(char *d, const char *s, size_t n, char *sink) { size_t i; (void)sink; SSE_LOOP(C128) }
 static void cpnt_128(char *d, const char *s, size_t n, char *sink) { size_t i; (void)sink; SSE_LOOP(CNT128) _mm_sfence(); }
+
+/* AMD CLZERO: CPUID 8000_0008h EBX bit 0 */
+int cm_have_clzero(void)
+{
+    unsigned a, b, c, d;
+    if (!__get_cpuid(0x80000000u, &a, &b, &c, &d) || a < 0x80000008u) return 0;
+    __get_cpuid(0x80000008u, &a, &b, &c, &d);
+    return (int)(b & 1u);
+}
+
+/* Memory Write on AMD: CLZERO writes whole zeroed cache lines to DRAM without carrying the data
+   over the core-to-memory link, so it measures what the memory itself can absorb (streaming
+   stores stop at the link's write limit, ~16 B per fabric clock on Zen) */
+static void clz_range(char *d, size_t n)
+{
+    size_t i;
+    for (i = 0; i < n; i += 256)
+        __asm__ volatile("clzero\n\tlea 64(%%rax), %%rax\n\tclzero\n\tlea 64(%%rax), %%rax\n\tclzero\n\tlea 64(%%rax), %%rax\n\tclzero"
+                         : : "a"(d + i) : "memory");
+}
 
 int cm_isa_best(void)
 {
@@ -356,6 +368,98 @@ static double bandwidth(pool *p, int level, int test, int isa, size_t per_thread
     return best;
 }
 
+/* ---------------------------------------------------------------- memory write (CLZERO) */
+typedef struct {
+    int cpu, idx, n, quit;
+    long reps;
+    char *buf;
+    size_t total;
+    double t0, t1;
+    pthread_barrier_t *start, *done;
+} czw;
+
+#define CLZ_CHUNK 4096   /* threads take turns in 4 KB chunks, so DRAM rows stay open */
+
+static void *clz_main(void *arg)
+{
+    czw *w = arg;
+    pin(w->cpu);
+    for (;;) {
+        long r;
+        pthread_barrier_wait(w->start);
+        if (w->quit) break;
+        w->t0 = now_s();
+        for (r = 0; r < w->reps; r++) {
+            size_t c;
+            for (c = (size_t)w->idx * CLZ_CHUNK; c < w->total; c += (size_t)w->n * CLZ_CHUNK) clz_range(w->buf + c, CLZ_CHUNK);
+        }
+        _mm_sfence();
+        w->t1 = now_s();
+        pthread_barrier_wait(w->done);
+    }
+    return NULL;
+}
+
+/* first logical CPU of every physical core among `cpus` */
+static int core_list(const int *cpus, int n, int *out)
+{
+    int i, k = 0;
+    for (i = 0; i < n; i++) {
+        char p[128];
+        FILE *f;
+        long first = cpus[i];
+        snprintf(p, sizeof p, "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", cpus[i]);
+        if ((f = fopen(p, "r"))) { if (fscanf(f, "%ld", &first) != 1) first = cpus[i]; fclose(f); }
+        if (first == cpus[i]) out[k++] = cpus[i];
+    }
+    return k ? k : n;
+}
+
+static double mem_write_clzero(const int *cpus, int ncpu, size_t total, double secs, volatile int *cancel)
+{
+    static int cores[MAXT];
+    czw *w;
+    pthread_t tid[MAXT];
+    pthread_barrier_t start, done;
+    char *buf;
+    int n = core_list(cpus, ncpu, cores), i;
+    double best = 0, spent = 0;
+    if (n > ncpu) n = ncpu;
+    total = total / ((size_t)n * CLZ_CHUNK) * ((size_t)n * CLZ_CHUNK);
+    if (!total || !(buf = alloc_huge(total))) return 0;
+    memset(buf, 1, total);
+    w = calloc((size_t)n, sizeof *w);
+    if (!w) { free(buf); return 0; }
+    pthread_barrier_init(&start, NULL, (unsigned)n + 1);
+    pthread_barrier_init(&done, NULL, (unsigned)n + 1);
+    for (i = 0; i < n; i++) {
+        w[i] = (czw){ .cpu = cores[i], .idx = i, .n = n, .reps = 1, .buf = buf, .total = total, .start = &start, .done = &done };
+        pthread_create(&tid[i], NULL, clz_main, &w[i]);
+    }
+    for (i = -1;; i = 0) {   /* one warm-up pass, then each trial = one complete pass over the block; best pass */
+        double t0 = 1e300, t1 = 0, t, bw;
+        int k, warm = i < 0;
+        if (cancel && *cancel) break;
+        pthread_barrier_wait(&start);
+        pthread_barrier_wait(&done);
+        for (k = 0; k < n; k++) { if (w[k].t0 < t0) t0 = w[k].t0; if (w[k].t1 > t1) t1 = w[k].t1; }
+        t = t1 - t0;
+        if (warm) continue;
+        spent += t;
+        bw = (double)total * w[0].reps / t;
+        if (bw > best) best = bw;
+        if (spent >= secs) break;
+    }
+    for (i = 0; i < n; i++) w[i].quit = 1;
+    pthread_barrier_wait(&start);
+    for (i = 0; i < n; i++) pthread_join(tid[i], NULL);
+    pthread_barrier_destroy(&start);
+    pthread_barrier_destroy(&done);
+    free(w);
+    free(buf);
+    return best;
+}
+
 /* ---------------------------------------------------------------- latency */
 static uint64_t xs(uint64_t *s) { *s ^= *s << 13; *s ^= *s >> 7; *s ^= *s << 17; return *s; }
 
@@ -536,7 +640,14 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
                     r->v[lv][te] = latency(lb, bytes, cfg->seconds, cancel);
                     sched_setaffinity(0, sizeof old, &old);
                     free(own);
+                } else if (lv == CM_MEM && te == CM_WRITE && cfg->mem_write != CM_MW_STREAM && cm_have_clzero()) {
+                    r->mem_write = CM_MW_CLZERO;
+                    /* block: 256 MB or 2.5 x L3, whichever is larger (well beyond any cache, and the size at which
+                       this method was measured to match the reference results on the same machine) */
+                    size_t l3b = (size_t)r->cache_kib[3] * 1024, blk = l3b * 5 / 2 > (256u << 20) ? l3b * 5 / 2 : (256u << 20);
+                    r->v[lv][te] = mem_write_clzero(cpus, n, blk, cfg->seconds, cancel) / mb;
                 } else {
+                    if (lv == CM_MEM && te == CM_WRITE) r->mem_write = CM_MW_STREAM;
                     r->v[lv][te] = bandwidth(p, lv, te, isa, per[lv], cfg->seconds, cancel) / mb;
                 }
                 if (cancel && *cancel) { r->v[lv][te] = 0; rc = 1; }

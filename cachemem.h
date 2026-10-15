@@ -8,6 +8,7 @@
 
 enum { CM_MEM, CM_L1, CM_L2, CM_L3, CM_NLEVEL };
 enum { CM_READ, CM_WRITE, CM_COPY, CM_LAT, CM_NTEST };
+enum { CM_MW_AUTO, CM_MW_STREAM, CM_MW_CLZERO };
 enum { CM_ISA_AUTO, CM_ISA_SSE2, CM_ISA_AVX2, CM_ISA_AVX512 };
 
 typedef struct {
@@ -17,6 +18,7 @@ typedef struct {
     long mem_mib;         /* memory block, MiB, all threads together (0 = auto: 1024, capped by MemAvailable/4) */
     unsigned run_mask;    /* bit (level * CM_NTEST + test); 0 = everything */
     double mb;            /* bytes per "MB" in results (default 1e6) */
+    int mem_write;        /* CM_MW_AUTO: CLZERO on AMD CPUs that have it, else streaming stores */
 } cm_cfg;
 
 typedef struct {
@@ -24,6 +26,7 @@ typedef struct {
     int threads, isa;
     long cache_kib[4];               /* L1d, L2, L3 per instance (index 1..3), from sysfs */
     double clock_mhz;                /* measured core clock during the run */
+    int mem_write;                   /* method used for Memory Write (CM_MW_STREAM / CM_MW_CLZERO) */
 } cm_result;
 
 /* called after every finished (or starting, when done == 0) cell; may run on a worker thread */
@@ -43,6 +46,7 @@ double cm_measure_mhz(void);
 void cm_format_bw(char *b, unsigned long n, int level, double mbs, int mib);
 const char *cm_isa_name(int isa);
 int  cm_isa_best(void);
+int  cm_have_clzero(void);
 extern const char *const cm_level_name[CM_NLEVEL], *const cm_test_name[CM_NTEST];
 
 #endif
