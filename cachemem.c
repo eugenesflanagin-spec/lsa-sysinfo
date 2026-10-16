@@ -760,7 +760,7 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
                 if (te == CM_LAT) {
                     /* single thread on the first CPU; chain over the level's block size */
                     /* block per level: L1 = half of L1d; L2 = half of L2 (few L1 hits); L3 = 8 x L2 (few L2
-                       hits); Memory = 4 x L3, at least 256 MB, so it cannot be cache-resident */
+                       hits); Memory = 8 x L3, at least 256 MB, so almost none of it is cache-resident */
                     size_t l3 = (size_t)r->cache_kib[3] * 1024, bytes;
                     char *lb = bufs[0], *own = NULL;
                     aff_t old;
@@ -770,7 +770,12 @@ int cm_run(const cm_cfg *cfg, cm_result *r, cm_cb cb, void *ud, volatile int *ca
                         bytes = (size_t)r->cache_kib[2] * 1024 * 8;
                         if (bytes > l3 / 2) bytes = l3 / 2;
                     }
-                    else bytes = l3 * 4 > (256u << 20) ? l3 * 4 : (256u << 20);
+                    else {   /* 8 x L3 (at least 256 MB): with 4 x L3 a quarter of the chain still hit L3 and
+                                read ~7% low against the reference; 8 x L3 leaves ~1/8 L3 hits */
+                        long av = mem_available_mib();
+                        bytes = l3 * 8 > (256u << 20) ? l3 * 8 : (256u << 20);
+                        if (av > 0 && bytes > (size_t)av / 2 * 1048576) bytes = (size_t)av / 2 * 1048576;
+                    }
                     /* cache latency on ordinary 4 KB pages (includes first-level TLB misses, as on a normal
                        desktop); memory latency on 2 MB pages so page walks do not dominate it */
                     own = alloc_pages(bytes, lv == CM_MEM);

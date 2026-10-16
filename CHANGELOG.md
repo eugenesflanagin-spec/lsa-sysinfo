@@ -3,6 +3,26 @@
 Linux System Audit is a clean-room Linux implementation of AIDA64 Business features.
 AIDA64 is by FinalWire Ltd. (https://www.aida64.com); Linux System Audit is not affiliated with FinalWire.
 
+## 0.1.3 - 2026-10-16
+
+### Fixed
+- **Memory Latency read ~7% low.** The test block was 4 x L3 (384 MB on a 7800X3D), so about a
+  quarter of the random chain still hit the L3 cache. It is now 8 x L3 (at least 256 MB, capped at
+  half of available RAM), leaving about 1/8 L3 hits.
+  - Same machine, FCLK 2000: 80.5 / 80.7 / 81.6 ns (was 75.5-76.8 ns); reference 80.2 / 81.5 /
+    82.8 ns.
+  - On Windows the chain runs on 4 KB pages unless "Lock pages in memory" is granted, so the
+    Windows figure is higher than the Linux one.
+
+### Known differences
+- **L1 Read is ~5% below the reference** (about 2250 vs 2445 GB/s on a 7800X3D). A single core
+  reaches ~61 bytes per clock with 256-bit loads, but with all cores loaded LSA gets about
+  289 GB/s per core against the reference's ~305. Longer runs (`--seconds 5`), one thread per
+  core, 256-bit loads and per-thread offsets were all tried; none closed it without pushing other
+  cells away from the reference, so it is left as measured.
+- Run length: each test runs ~1 s (`--seconds`); 5 s gives the same results, so the shorter run
+  costs no accuracy.
+
 ## 0.1.2 - 2026-10-15
 
 ### Added

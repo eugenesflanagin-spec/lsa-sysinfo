@@ -2,7 +2,7 @@
 ; Clean-room implementation of AIDA64 Business features. AIDA64 is by FinalWire Ltd.; not affiliated.
 Unicode true
 !ifndef VERSION
-  !define VERSION "0.1.2"
+  !define VERSION "0.1.3"
 !endif
 !ifndef DIST
   !define DIST "dist/win"
