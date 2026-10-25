@@ -1,0 +1,1913 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LSA User Guide</title><style>
+@page { size: A4; margin: 18mm 16mm 20mm 16mm;
+  @bottom-center { content: "LSA User Guide  ·  page " counter(page); font: 9pt 'Noto Sans', sans-serif; color: #666; } }
+body { font-family: 'Noto Sans', 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.5; color: #1a1a1a; }
+@media screen { body { max-width: 52em; margin: 0 auto; padding: 0 16px; } }
+h1 { font-size: 24pt; color: #0b4f8a; border-bottom: 2px solid #0b4f8a; padding-bottom: 4px; }
+h2 { font-size: 18pt; color: #0b4f8a; margin-top: 1.4em; }
+h3 { font-size: 14pt; color: #134; margin-top: 1.2em; }
+h4 { font-size: 12pt; }
+h1, h2, h3, h4 { break-after: avoid; }
+section.doc { break-before: page; }
+a { color: #0b5cad; text-decoration: none; }
+code { font-family: 'DejaVu Sans Mono', monospace; font-size: 9.5pt; background: #f2f4f7; padding: 0 2px; }
+pre { background: #f2f4f7; padding: 8px; font-size: 9pt; white-space: pre-wrap; word-break: break-all; border-left: 3px solid #0b4f8a; }
+pre code { background: none; }
+table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 0.6em 0; }
+th, td { border: 1px solid #c8ced6; padding: 3px 5px; vertical-align: top; word-break: break-word; }
+th { background: #e6edf5; }
+img { max-width: 100%; border: 1px solid #ccc; }
+blockquote { border-left: 4px solid #e0a800; background: #fff8e1; margin: 0.6em 0; padding: 4px 10px; }
+.cover { text-align: center; padding-top: 70mm; }
+.cover h1 { border: none; font-size: 24pt; }
+.toc li { margin: 3px 0; }
+@media print { .toc a::after { content: leader('.') target-counter(attr(href), page); } }
+</style></head><body>
+<div class="cover"><h1>Linux System Audit: Cache &amp; Memory Benchmark</h1>
+<p style="font-size:14pt">User guide, result reference, command reference and glossary</p>
+<p style="font-size:11pt; margin: 30mm 20mm 0 20mm">LSA is a clean-room Linux implementation of AIDA64 Business's
+Cache &amp; Memory Benchmark, built to produce results 1:1 with the native Windows app.
+AIDA64 is made by FinalWire Ltd.; LSA is an independent project, not affiliated with or endorsed by FinalWire,
+and contains none of its code or data.</p></div>
+<section class="doc"><h1>Contents</h1><ol class="toc"><li><a href="#user-guide">Linux System Audit - User Guide</a></li><li><a href="#results">Linux System Audit - Result Reference</a></li><li><a href="#cli-reference">Linux System Audit - Command-Line Reference</a></li><li><a href="#glossary">Linux System Audit - Glossary</a></li></ol></section>
+<section class="doc" id="user-guide">
+<h1 id="user-guide--linux-system-audit---user-guide">Linux System Audit - User
+Guide</h1>
+<p>Version 0.2.0. Covers Linux (Arch package, AUR, generic tarball,
+source build) and the Windows build.</p>
+<blockquote>
+<p><strong>About the name and credit.</strong> Linux System Audit (LSA,
+package <code>lsa-sysinfo</code>) is a clean-room Linux implementation
+of AIDA64 Business features. <strong>AIDA64 is made by FinalWire
+Ltd.</strong> (<a
+href="https://www.aida64.com">https://www.aida64.com</a>). LSA is an
+independent project. It is <strong>not affiliated with, endorsed by or
+connected to FinalWire</strong>. It contains no AIDA64 code, binaries or
+data. No AIDA64 code was disassembled, decompiled or copied, and
+AIDA64's hardware database and artwork are not used. Please do not send
+LSA questions to FinalWire. See <code>EVIDENCE.md</code> in the source
+for how the specification was made.</p>
+</blockquote>
+<p>Other pages:</p>
+<ul>
+<li><a href="#results">RESULTS.md</a> - one short section for every
+value LSA shows (each cell and line).</li>
+<li><a href="#cli-reference">CLI-REFERENCE.md</a> - every command and
+option, with examples.</li>
+<li><a href="#glossary">GLOSSARY.md</a> - every technical word used
+here, in plain English.</li>
+</ul>
+<hr />
+<h2 id="user-guide--contents">Contents</h2>
+<ol type="1">
+<li><a href="#user-guide--1-what-it-is-in-plain-words">What it is, in plain
+words</a></li>
+<li><a href="#user-guide--2-who-it-is-for">Who it is for</a></li>
+<li><a href="#user-guide--3-install">Install</a></li>
+<li><a href="#user-guide--4-first-launch">First launch</a></li>
+<li><a href="#user-guide--5-a-tour-of-the-window">A tour of the window</a></li>
+<li><a href="#user-guide--6-what-each-number-means">What each number means</a></li>
+<li><a href="#user-guide--7-how-the-tests-work-the-detail">How the tests work (the
+detail)</a></li>
+<li><a href="#user-guide--8-saving-results-and-the-run-history">Saving results and
+the run history</a></li>
+<li><a href="#user-guide--9-reading-results-and-comparing-runs">Reading results and
+comparing runs</a></li>
+<li><a href="#user-guide--10-known-limits-and-known-differences-from-aida64">Known
+limits and known differences from AIDA64</a></li>
+<li><a href="#user-guide--11-windows-build">Windows build</a></li>
+<li><a href="#user-guide--12-settings-and-files">Settings and files</a></li>
+<li><a href="#user-guide--13-troubleshooting">Troubleshooting</a></li>
+<li><a href="#user-guide--14-uninstall">Uninstall</a></li>
+<li><a href="#user-guide--15-faq">FAQ</a></li>
+<li><a href="#user-guide--16-glossary">Glossary</a></li>
+</ol>
+<hr />
+<h2 id="user-guide--1-what-it-is-in-plain-words">1. What it is, in plain words</h2>
+<p>LSA measures <strong>how fast your computer can move data</strong>
+between the processor and its memory.</p>
+<p>It does this for four places where data can live:</p>
+<ul>
+<li><strong>Memory</strong> - your RAM sticks. Big, but the
+slowest.</li>
+<li><strong>L1 cache</strong> - a tiny, very fast store inside each CPU
+core.</li>
+<li><strong>L2 cache</strong> - bigger and a bit slower, also per
+core.</li>
+<li><strong>L3 cache</strong> - bigger again, shared by many cores.</li>
+</ul>
+<p>For each place it measures four things:</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Plain words</th>
+<th>Unit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Read</strong></td>
+<td>How much data per second the CPU can read.</td>
+<td>MB/s (memory) or GB/s (caches)</td>
+</tr>
+<tr>
+<td><strong>Write</strong></td>
+<td>How much data per second the CPU can write.</td>
+<td>MB/s or GB/s</td>
+</tr>
+<tr>
+<td><strong>Copy</strong></td>
+<td>How much data per second it can read and write back somewhere
+else.</td>
+<td>MB/s or GB/s</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>How long one single, unpredictable read takes. Lower is better.</td>
+<td>ns (nanoseconds)</td>
+</tr>
+</tbody>
+</table>
+<p>The result is a 4 x 4 grid, laid out like the familiar AIDA64 Cache
+&amp; Memory Benchmark window, so you can compare a Linux run with a
+Windows run on the same PC.</p>
+<p>This is the first tool of LSA. The project plans more of AIDA64's
+pages and tools later (<code>CHECKLIST.tsv</code> lists 162 planned
+items), but today LSA is the Cache &amp; Memory Benchmark only.</p>
+<h2 id="user-guide--2-who-it-is-for">2. Who it is for</h2>
+<ul>
+<li><strong>Beginners</strong> who want one number to check their RAM is
+running at the speed they paid for (for example after turning on XMP or
+EXPO in the BIOS).</li>
+<li><strong>Tuners and overclockers</strong> who change memory timings,
+Infinity Fabric clock (FCLK) or similar BIOS settings and want to see
+the effect.</li>
+<li><strong>Dual-booters</strong> who want to compare Linux with
+Windows, or LSA with AIDA64, on the same machine.</li>
+<li><strong>Developers and reviewers</strong> who want a scriptable
+command-line benchmark with plain text output.</li>
+</ul>
+<h2 id="user-guide--3-install">3. Install</h2>
+<p>LSA runs on 64-bit x86 Linux (Intel or AMD). It needs GTK 3 for the
+window. The command line needs only glibc.</p>
+<h3 id="user-guide--31-arch-linux-and-derivatives---aur">3.1 Arch Linux and
+derivatives - AUR</h3>
+<p>The package name is <strong><code>lsa-sysinfo</code></strong>. With
+an AUR helper:</p>
+<pre><code>yay -S lsa-sysinfo</code></pre>
+<p>or by hand:</p>
+<pre><code>git clone https://aur.archlinux.org/lsa-sysinfo.git
+cd lsa-sysinfo
+makepkg -si</code></pre>
+<h3 id="user-guide--32-arch-linux---prebuilt-package-from-the-release">3.2 Arch
+Linux - prebuilt package from the release</h3>
+<p>Each GitHub release has
+<code>lsa-sysinfo-&lt;version&gt;-1-x86_64.pkg.tar.zst</code>. Install
+it with:</p>
+<pre><code>sudo pacman -U lsa-sysinfo-0.2.0-1-x86_64.pkg.tar.zst</code></pre>
+<h3 id="user-guide--33-any-other-distribution---generic-tarball">3.3 Any other
+distribution - generic tarball</h3>
+<p>Each release also has
+<code>lsa-sysinfo-&lt;version&gt;-linux-x86_64.tar.gz</code>. It was
+built on an older distribution (Ubuntu 22.04), so it runs on most
+current ones (glibc 2.34 or newer, GTK 3). The fast AVX2 / AVX-512 code
+is picked at run time, only if your CPU has it.</p>
+<pre><code>tar xzf lsa-sysinfo-0.2.0-linux-x86_64.tar.gz
+cd lsa-sysinfo-0.2.0-linux-x86_64
+./usr/bin/lsa --version          # try it without installing
+./usr/bin/lsa-gui
+sudo cp -r usr/bin usr/share /usr/local/     # install for all users</code></pre>
+<p>Read <code>INSTALL.txt</code> inside the tarball for the full list of
+run-time needs.</p>
+<h3 id="user-guide--34-build-from-source">3.4 Build from source</h3>
+<p>You need <code>gcc</code>, <code>make</code>, <code>pkg-config</code>
+and the GTK 3 development files (Arch: <code>gtk3</code>; Debian/Ubuntu:
+<code>libgtk-3-dev</code>; Fedora: <code>gtk3-devel</code>).</p>
+<pre><code>git clone https://github.com/eugenesflanagin-spec/lsa-sysinfo.git
+cd lsa-sysinfo
+make native                         # builds dist/native/lsa and dist/native/lsa-gui
+make install                        # per-user install into ~/.local
+# or, system-wide (what the Arch package does):
+sudo make install-system DESTDIR= SYSPREFIX=/usr</code></pre>
+<p><code>make install</code> puts the programs in
+<code>~/.local/bin</code>. Make sure that folder is on your
+<code>PATH</code>.</p>
+<h3 id="user-guide--35-optional-memory-details-from-srs-sysinfo">3.5 Optional:
+memory details from srs-sysinfo</h3>
+<p>LSA can show your memory type and speed (for example "Dual Channel
+DDR5-6000 SDRAM (2 DIMMs)"). Reading that needs root, so LSA borrows it
+from a small cache file written by <code>srs-root</code>, part of the
+sister project <strong>srs-sysinfo</strong>:</p>
+<pre><code>yay -S srs-sysinfo        # or install it from its own release
+pkexec srs-root            # one password prompt; writes ~/.cache/srs/root/dmidecode.txt</code></pre>
+<p>Without it, the benchmark works fine. Only the "Memory Bus",
+"DRAM:FSB Ratio" and "Memory Type" lines stay empty.</p>
+<h3 id="user-guide--36-windows">3.6 Windows</h3>
+<p>See <a href="#user-guide--11-windows-build">section 11</a>.</p>
+<h2 id="user-guide--4-first-launch">4. First launch</h2>
+<p>Open your application menu and look for <strong>LSA Cache &amp;
+Memory Benchmark</strong> (category System / Monitor; on some desktops
+under Benchmarks). Or type <code>lsa-gui</code> in a terminal.</p>
+<p>The window opens with an <strong>empty grid</strong> and the system
+lines filled in. Nothing runs yet.</p>
+<p><img src="data:image/png;base64,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"
+alt="The LSA Cache &amp; Memory Benchmark window before a run" /></p>
+<p><em>The window before a run, on the author's Ryzen 7 7800X3D. The
+grid fills in, cell by cell, when you press Start Benchmark.</em></p>
+<p>Before you press <strong>Start Benchmark</strong>:</p>
+<ol type="1">
+<li><strong>Close heavy programs</strong> - games, browsers with video,
+compiles, virtual machines, file copies. Anything that uses the CPU or
+memory makes the results lower and less steady.</li>
+<li><strong>Never run another memory benchmark at the same time</strong>
+- for example AIDA64 under Wine, or a second copy of LSA. Both runs
+would fight for the memory bus and both results would be wrong (latency
+can double).</li>
+<li>Press <strong>Start Benchmark</strong>. A dialog warns that every
+CPU thread and the memory bus will be busy for about 20 seconds. Press
+<strong>OK</strong>.</li>
+</ol>
+<p>The run takes about 20 seconds. The cell being measured turns yellow
+and shows <code>...</code>, and the status line says, for example,
+<code>Measuring L2 Cache Copy ...</code>. Your PC may feel slow during
+the run. That is normal.</p>
+<p>To stop early, press the same button (it now says
+<strong>Stop</strong>). Closing the window also stops the run.</p>
+<h2 id="user-guide--5-a-tour-of-the-window">5. A tour of the window</h2>
+<p>There is one window. From top to bottom:</p>
+<h3 id="user-guide--51-the-results-grid">5.1 The results grid</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Read</th>
+<th>Write</th>
+<th>Copy</th>
+<th>Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Memory</strong></td>
+<td>MB/s</td>
+<td>MB/s</td>
+<td>MB/s</td>
+<td>ns</td>
+</tr>
+<tr>
+<td><strong>L1 Cache</strong></td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>ns</td>
+</tr>
+<tr>
+<td><strong>L2 Cache</strong></td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>ns</td>
+</tr>
+<tr>
+<td><strong>L3 Cache</strong></td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>GB/s</td>
+<td>ns</td>
+</tr>
+</tbody>
+</table>
+<p>Empty cells have not been measured yet. A cell that stays empty after
+a run was skipped (this can happen if you stopped the run).</p>
+<h3 id="user-guide--52-the-system-lines">5.2 The system lines</h3>
+<p>These describe the machine the numbers belong to. They are filled
+when the window opens and refreshed after each run (the clock is
+measured again).</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>What it shows</th>
+<th>Where it comes from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CPU Type</strong></td>
+<td>Core count as a word plus the model, e.g.
+<code>OctalCore AMD Ryzen 7 7800X3D</code>.</td>
+<td><code>/proc/cpuinfo</code></td>
+</tr>
+<tr>
+<td><strong>CPU Stepping</strong></td>
+<td>Code name, stepping and family/model, e.g.
+<code>Raphael, stepping 2 (family 19h model 61h)</code>.</td>
+<td><code>/proc/cpuinfo</code> plus a built-in code-name table</td>
+</tr>
+<tr>
+<td><strong>CPU Clock</strong></td>
+<td>The core clock LSA <strong>measured</strong> a moment ago, e.g.
+<code>4968.7 MHz</code>. It moves a little run to run, because modern
+CPUs change clock all the time.</td>
+<td>A short timing loop</td>
+</tr>
+<tr>
+<td><strong>CPU FSB</strong></td>
+<td>The reference (base) clock, <strong>measured</strong>, e.g.
+<code>105.0 MHz</code> on a board set to eCLK 105. Shows
+<code>100.0 MHz (nominal)</code> when it cannot be measured.</td>
+<td>TSC rate x 100 / CPPC <code>nominal_freq</code></td>
+</tr>
+<tr>
+<td><strong>CPU Multiplier</strong></td>
+<td>CPU Clock divided by CPU FSB, e.g. <code>46.16x</code>.</td>
+<td>Calculated</td>
+</tr>
+<tr>
+<td><strong>North Bridge Clock</strong></td>
+<td>On AMD Ryzen 7000 desktop CPUs: the Infinity Fabric clock (FCLK),
+e.g. <code>2133.0 MHz</code>. Otherwise <code>n/a (...)</code> with the
+reason.</td>
+<td><code>ryzen_smu</code> driver's PM table (optional)</td>
+</tr>
+<tr>
+<td><strong>Memory Bus</strong></td>
+<td>The real memory clock, half the "MT/s" figure, e.g.
+<code>3000.0 MHz</code> for DDR5-6000.</td>
+<td>srs-root DMI cache (optional)</td>
+</tr>
+<tr>
+<td><strong>DRAM:FSB Ratio</strong></td>
+<td>Memory clock divided by CPU FSB, e.g. <code>DRAM:FSB 30:1</code>, or
+<code>28.6:1</code> with a 105 MHz FSB.</td>
+<td>Calculated</td>
+</tr>
+<tr>
+<td><strong>Memory Type</strong></td>
+<td>Channels, type, speed and DIMM count, e.g.
+<code>Dual Channel DDR5-6000 SDRAM (2 DIMMs)</code>.</td>
+<td>srs-root DMI cache (optional)</td>
+</tr>
+<tr>
+<td><strong>Chipset</strong></td>
+<td>The motherboard chipset and CPU platform, e.g.
+<code>AMD X870, AMD Raphael/Granite Ridge</code>.</td>
+<td>PCI devices + hwdata <code>pci.ids</code></td>
+</tr>
+<tr>
+<td><strong>Motherboard</strong></td>
+<td>Maker and board name.</td>
+<td><code>/sys/class/dmi/id/board_*</code></td>
+</tr>
+<tr>
+<td><strong>BIOS Version</strong></td>
+<td>BIOS version and date.</td>
+<td><code>/sys/class/dmi/id/bios_*</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="user-guide--53-status-line-and-buttons">5.3 Status line and buttons</h3>
+<ul>
+<li><strong>Status line</strong> - before a run:
+<code>Ready - AVX-512 code path</code> (the fastest instruction set your
+CPU has, see <a href="#user-guide--74-code-paths-avx-512-avx2-sse2">7.4</a>). During
+a run: the cell being measured. After:
+<code>Finished - AVX-512 code path, 16 threads</code> (or
+<code>Stopped ...</code>). After saving:
+<code>Saved (PNG + TXT)</code>.</li>
+<li><strong>Save</strong> - greyed out until a run finishes. Saves a
+picture and a text file (<a
+href="#user-guide--8-saving-results-and-the-run-history">section 8</a>).</li>
+<li><strong>Guide</strong> - opens this user guide.</li>
+<li><strong>Start Benchmark / Stop</strong> - starts a run (after
+asking), or stops the current one.</li>
+<li><strong>Close</strong> - closes the window (and stops a run that is
+going).</li>
+</ul>
+<p>The small grey note under the status line is the credit and
+non-affiliation statement.</p>
+<h3 id="user-guide--54-help-for-each-value">5.4 Help for each value</h3>
+<p>Every cell and every system line has its own short section in the
+guide (<a href="#results">RESULTS.md</a>):</p>
+<ul>
+<li><strong>Right-click</strong> a value and choose <strong>Open guide:
+...</strong>, or</li>
+<li>point at it and press <strong>F1</strong>. (F1 anywhere else opens
+the guide at the start.)</li>
+<li>Hover over a value for a tooltip with its name.</li>
+</ul>
+<p>The guide opens in your PDF viewer at that section if the viewer can
+jump to it (Okular, Evince, Papers); otherwise the HTML version opens in
+your web browser. On the command line,
+<code>lsa guide mem-latency</code> does the same;
+<code>lsa guide --list</code> lists the item names. The menu also has
+<strong>LSA User Guide (PDF)</strong>.</p>
+<h2 id="user-guide--6-what-each-number-means">6. What each number means</h2>
+<h3 id="user-guide--61-read-write-copy-bandwidth">6.1 Read, Write, Copy
+(bandwidth)</h3>
+<p><strong>Bandwidth</strong> is how much data moves per second. Think
+of it as the width of a motorway: more lanes, more cars per second.</p>
+<ul>
+<li><strong>Read</strong> - the CPU pulls data in. This is what most
+programs do most.</li>
+<li><strong>Write</strong> - the CPU sends data out.</li>
+<li><strong>Copy</strong> - read from one place and write to another.
+<strong>LSA counts both the bytes read and the bytes written</strong>,
+the usual convention for this kind of benchmark. So Copy is often close
+to Read + Write's combined traffic, not half of it.</li>
+</ul>
+<p>Units:</p>
+<ul>
+<li><strong>Memory</strong> is shown in <strong>MB/s</strong> (megabytes
+per second), e.g. <code>67678 MB/s</code>.</li>
+<li><strong>Caches</strong> are shown in <strong>GB/s</strong>
+(gigabytes per second), e.g. <code>2292.3 GB/s</code>, because the
+numbers are huge.</li>
+<li>LSA uses decimal units: 1 MB = 1,000,000 bytes and 1 GB = 1,000 MB.
+The command line can show binary units instead
+(<code>--mib</code>).</li>
+</ul>
+<p>All bandwidth tests use <strong>every CPU thread at once</strong>. So
+the number is the whole CPU's total, not one core's.</p>
+<h3 id="user-guide--62-latency">6.2 Latency</h3>
+<p><strong>Latency</strong> is the waiting time for one piece of data.
+Think of it as how long one car takes to drive from A to B, no matter
+how wide the road is.</p>
+<ul>
+<li>It is measured in <strong>nanoseconds</strong> (ns). 1 ns = one
+billionth of a second.</li>
+<li><strong>Lower is better.</strong></li>
+<li>It uses <strong>one thread</strong> only, reading in a random order
+so the CPU cannot guess what comes next.</li>
+</ul>
+<p>Typical values on a current desktop:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Typical latency</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1</td>
+<td>about 1 ns (4-5 CPU clock ticks)</td>
+<td>Inside the core, right next to it.</td>
+</tr>
+<tr>
+<td>L2</td>
+<td>about 3-4 ns</td>
+<td>Still per core, a bit further away.</td>
+</tr>
+<tr>
+<td>L3</td>
+<td>about 10-12 ns</td>
+<td>Shared by many cores.</td>
+</tr>
+<tr>
+<td>Memory</td>
+<td>about 60-90 ns (DDR5), 55-80 ns (good DDR4)</td>
+<td>Off the CPU chip, through the memory controller to the RAM
+sticks.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="user-guide--63-example-a-full-result">6.3 Example: a full result</h3>
+<p>This is a run from the author's PC (Ryzen 7 7800X3D, 2 x 16 GB
+DDR5-6000), taken from the saved run history and shown in the command
+line's layout:</p>
+<pre><code>Linux System Audit 0.1.3 - Cache &amp; Memory Benchmark
+
+                     Read          Write           Copy      Latency
+Memory          67678 MB/s     93211 MB/s     67373 MB/s      81.8 ns
+L1 Cache       2292.3 GB/s    1279.0 GB/s    2459.7 GB/s       0.8 ns
+L2 Cache       1240.2 GB/s    1198.0 GB/s    1215.6 GB/s       3.9 ns
+L3 Cache       764.39 GB/s    637.68 GB/s    715.16 GB/s      11.6 ns</code></pre>
+<p>How to read it:</p>
+<ul>
+<li>The caches are 10 to 35 times faster than memory. That is why caches
+exist.</li>
+<li>L1 Write is about half of L1 Read. Each core can do two reads but
+only one write per clock tick.</li>
+<li>Memory latency (81.8 ns) is about 100 times L1 latency (0.8
+ns).</li>
+</ul>
+<h2 id="user-guide--7-how-the-tests-work-the-detail">7. How the tests work (the
+detail)</h2>
+<p>You do not need this to use LSA. It explains why the numbers look the
+way they do.</p>
+<h3 id="user-guide--71-bandwidth-tests">7.1 Bandwidth tests</h3>
+<ul>
+<li>LSA starts <strong>one worker thread per logical CPU</strong> and
+pins each one to its own CPU ("pinned" = it is not allowed to move to
+another CPU).</li>
+<li>Each thread works on its <strong>own block of memory</strong>:
+<ul>
+<li><strong>L1, L2, L3:</strong> the block is half of that thread's
+share of the cache, so it stays inside that cache level.</li>
+<li><strong>Memory:</strong> a block far bigger than all caches (at
+least 4 x L3, at least 256 MB, default 1 GB, at most a quarter of free
+RAM), so the data cannot sit in a cache.</li>
+</ul></li>
+<li>Each test runs many short trials of about 40-80 ms over about 1
+second per cell, and keeps the <strong>best</strong> trial. Best, not
+average, because background activity can only make a trial slower.</li>
+<li><strong>Memory Copy</strong> uses streaming stores (writes that
+bypass the cache), as is usual for memory-to-memory copies.</li>
+</ul>
+<h3 id="user-guide--72-memory-write-on-amd-cpus-clzero">7.2 Memory Write on AMD CPUs
+(CLZERO)</h3>
+<p>On AMD Zen CPUs the link between each core complex and the memory
+controller can only accept about 16 bytes of normal writes per fabric
+clock. Normal "streaming" writes stop there (about 33 GB/s on a
+7800X3D), well below what the RAM can absorb.</p>
+<p>AMD CPUs have an instruction called <strong>CLZERO</strong> that
+writes a whole 64-byte line of zeros straight to memory. LSA uses it for
+<strong>Memory Write</strong> when the CPU has it: one thread per
+physical core, threads interleaved in 4 KB chunks over a shared block
+(256 MB or 2.5 x L3), best full pass. That measures what the memory
+itself can take, about 93,000 MB/s on the author's PC, which matches the
+reference.</p>
+<ul>
+<li>Other CPUs (Intel, older AMD) use streaming stores.</li>
+<li>To see the streaming-store figure on AMD, use
+<code>lsa cachemem --mem-write stream</code>.</li>
+<li>The command line's last line says which method was used.</li>
+</ul>
+<h3 id="user-guide--73-latency-test">7.3 Latency test</h3>
+<ul>
+<li>One thread follows a <strong>random chain of pointers</strong>
+through every 64-byte line of a block. Each read tells it where the next
+read is, so the CPU cannot prefetch (fetch early) the data.</li>
+<li><strong>Block sizes:</strong>
+<ul>
+<li>L1: half of the L1 data cache.</li>
+<li>L2: half of the L2 cache.</li>
+<li>L3: 8 x the L2 size (mostly L3 hits, still within the reach of the
+address-translation cache).</li>
+<li>Memory: 8 x L3, at least 256 MB, at most half of free RAM. With 8 x
+L3 only about 1 in 8 reads can still hit L3.</li>
+</ul></li>
+<li><strong>Page size:</strong> caches use normal 4 KB pages. Memory
+uses <strong>2 MB huge pages</strong> (Linux "transparent huge pages")
+so that address-translation misses do not inflate the figure.</li>
+</ul>
+<h3 id="user-guide--74-code-paths-avx-512-avx2-sse2">7.4 Code paths (AVX-512, AVX2,
+SSE2)</h3>
+<p>LSA has three versions of its read/write/copy loops and picks the
+widest one your CPU supports:</p>
+<table>
+<thead>
+<tr>
+<th>Code path</th>
+<th>Bytes per instruction</th>
+<th>CPUs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AVX-512</strong></td>
+<td>64</td>
+<td>AMD Zen 4 and newer, some Intel</td>
+</tr>
+<tr>
+<td><strong>AVX2</strong></td>
+<td>32</td>
+<td>Most CPUs since about 2013-2015</td>
+</tr>
+<tr>
+<td><strong>SSE2</strong></td>
+<td>16</td>
+<td>Every 64-bit x86 CPU</td>
+</tr>
+</tbody>
+</table>
+<p>The status line and the last command-line line show which one was
+used. Cache bandwidth depends strongly on it; memory bandwidth hardly
+does. You can force a narrower one on the command line
+(<code>--isa avx2</code>) to compare.</p>
+<h2 id="user-guide--8-saving-results-and-the-run-history">8. Saving results and the
+run history</h2>
+<h3 id="user-guide--81-save-window">8.1 Save (window)</h3>
+<p>After a run, press <strong>Save</strong>. Pick a name (default
+<code>cachemem-YYYYMMDD-HHMMSS.png</code>). LSA writes <strong>two
+files</strong>:</p>
+<ul>
+<li><strong><code>.png</code></strong> - a picture of the whole window,
+grid and system lines.</li>
+<li><strong><code>.txt</code></strong> - the same results as text, in
+this layout:</li>
+</ul>
+<pre><code>Linux System Audit 0.1.3 - Cache &amp; Memory Benchmark
+
+                     Read          Write           Copy      Latency
+Memory          67678 MB/s     93211 MB/s     67373 MB/s      81.8 ns
+...
+
+CPU Type             OctalCore AMD Ryzen 7 7800X3D
+CPU Stepping         Raphael, stepping 2  (family 19h model 61h)
+...
+BIOS Version         1805  (09/18/2026)
+Code path            AVX-512, 16 threads</code></pre>
+<h3 id="user-guide--82-command-line-output">8.2 Command-line output</h3>
+<p><code>lsa cachemem</code> prints progress to the terminal's error
+stream (one line per finished cell) and the final grid plus the system
+lines to normal output. So you can save just the result with:</p>
+<pre><code>lsa cachemem &gt; result.txt</code></pre>
+<h3 id="user-guide--83-the-run-history">8.3 The run history</h3>
+<p>Every run <strong>finished in the window</strong> (not stopped, and
+not command-line runs) adds one line to:</p>
+<pre><code>~/.cache/lsa/cachemem-history.txt</code></pre>
+<p>One line per run:</p>
+<pre><code>2026-10-21 10:47:23  AVX-512 16T 67678 93211 67373 81.8 2292344 1278983 2459687 0.8 1240159 1198037 1215578 3.9 764385 637682 715159 11.6</code></pre>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2026-10-21 10:47:23</code></td>
+<td>Date and time of the run</td>
+</tr>
+<tr>
+<td><code>AVX-512</code></td>
+<td>Code path</td>
+</tr>
+<tr>
+<td><code>16T</code></td>
+<td>Threads used</td>
+</tr>
+<tr>
+<td>next 4 numbers</td>
+<td>Memory: Read, Write, Copy (MB/s), Latency (ns)</td>
+</tr>
+<tr>
+<td>next 4</td>
+<td>L1: Read, Write, Copy, Latency</td>
+</tr>
+<tr>
+<td>next 4</td>
+<td>L2: same order</td>
+</tr>
+<tr>
+<td>last 4</td>
+<td>L3: same order</td>
+</tr>
+</tbody>
+</table>
+<p>Note: in the history <strong>all bandwidth values are in
+MB/s</strong>, caches too. <code>2292344</code> MB/s = 2292.3 GB/s. This
+makes the file easy to load into a spreadsheet (split on spaces).</p>
+<h2 id="user-guide--9-reading-results-and-comparing-runs">9. Reading results and
+comparing runs</h2>
+<h3 id="user-guide--91-rules-for-a-fair-comparison">9.1 Rules for a fair
+comparison</h3>
+<ol type="1">
+<li><strong>Same machine, same settings.</strong> Change one thing at a
+time (one BIOS setting, one kernel).</li>
+<li><strong>Idle machine.</strong> Close other programs. Wait a minute
+after boot for background jobs to settle.</li>
+<li><strong>Run 3 times</strong> and look at the spread. On the author's
+PC the history shows L1 Read between 2178 and 2292 GB/s on normal runs.
+A difference smaller than the spread is noise.</li>
+<li><strong>Look for outliers.</strong> One run in the history has L1
+Read 1903 GB/s and L3 Read 1171 GB/s, way off the others: something else
+was running. Throw such runs away.</li>
+<li><strong>Compare like with like.</strong> Do not compare an AVX-512
+run with an AVX2 run, or a run with <code>--threads 8</code> with an
+all-thread run.</li>
+</ol>
+<h3 id="user-guide--92-what-changes-what">9.2 What changes what</h3>
+<table>
+<thead>
+<tr>
+<th>You changed...</th>
+<th>Expect to see change in...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Memory speed (MT/s), XMP/EXPO</td>
+<td>Memory Read/Write/Copy up, Memory Latency down</td>
+</tr>
+<tr>
+<td>Memory timings (CL, tRCD...)</td>
+<td>Mostly Memory Latency</td>
+</tr>
+<tr>
+<td>AMD FCLK / UCLK ratio (UCLK 1:1 vs 1:2)</td>
+<td>Memory Latency and Memory Read/Copy</td>
+</tr>
+<tr>
+<td>CPU clock (PBO, Curve Optimizer, power limits)</td>
+<td>L1/L2/L3 bandwidth and latency in ns</td>
+</tr>
+<tr>
+<td>Fewer DIMMs or single channel</td>
+<td>Memory bandwidth roughly halves</td>
+</tr>
+<tr>
+<td>Background load</td>
+<td>Everything drops and gets noisy, L3 and Memory most</td>
+</tr>
+</tbody>
+</table>
+<p>The author's own history shows one such change: Memory Latency went
+from 76-77 ns (block 4 x L3, LSA 0.1.2) to 80-82 ns (block 8 x L3, LSA
+0.1.3). That was a <strong>measurement</strong> change, not a hardware
+change: with the bigger block fewer reads accidentally hit the L3 cache.
+Always note the LSA version when you compare old and new runs.</p>
+<h3 id="user-guide--93-comparing-with-aida64-on-windows">9.3 Comparing with AIDA64
+on Windows</h3>
+<p>On the reference PC (Ryzen 7 7800X3D, DDR5-6000, FCLK 2000), three
+clean AIDA64 runs on Windows and three LSA 0.1.3 runs on Linux, same
+hardware, same day:</p>
+<table>
+<thead>
+<tr>
+<th>Cell</th>
+<th>AIDA64 (3 runs)</th>
+<th>LSA 0.1.3</th>
+<th>Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Memory Read / Write / Copy</td>
+<td>~63,700 / ~93,800 / ~63,600 MB/s</td>
+<td>within ~3%</td>
+<td>close</td>
+</tr>
+<tr>
+<td>Memory Latency</td>
+<td>80.2 / 81.5 / 82.8 ns</td>
+<td>80.5 / 80.7 / 81.6 ns</td>
+<td>close</td>
+</tr>
+<tr>
+<td>L1 Read / Write / Copy</td>
+<td>~2445 / ~1271 / ~2510 GB/s</td>
+<td>Read 2250-2330, others within ~3%</td>
+<td><strong>L1 Read ~5% low</strong></td>
+</tr>
+<tr>
+<td>L1 Latency</td>
+<td>0.8 ns</td>
+<td>0.8 ns</td>
+<td>same</td>
+</tr>
+<tr>
+<td>L2 Read / Write / Copy</td>
+<td>~1240 / ~1191 / ~1218 GB/s</td>
+<td>within ~3%</td>
+<td>close</td>
+</tr>
+<tr>
+<td>L2 Latency</td>
+<td>3.7 ns</td>
+<td>3.6-3.9 ns</td>
+<td>close</td>
+</tr>
+<tr>
+<td>L3 Read / Write / Copy</td>
+<td>~700 / ~714 / ~673 GB/s</td>
+<td>within ~3%</td>
+<td>close</td>
+</tr>
+<tr>
+<td>L3 Latency</td>
+<td>11.2 ns</td>
+<td>11.6-11.7 ns</td>
+<td>close</td>
+</tr>
+</tbody>
+</table>
+<p>AIDA64 itself varies by a similar amount from run to run (for example
+L1 Read 2348-2457 GB/s, L2 Write 1014-1240 GB/s across runs).</p>
+<h2 id="user-guide--10-known-limits-and-known-differences-from-aida64">10. Known
+limits and known differences from AIDA64</h2>
+<ul>
+<li><strong>L1 Read is about 5% below AIDA64.</strong> About 2250 GB/s
+vs 2445 GB/s on a 7800X3D. One core alone reaches about 61 bytes per
+clock tick, but with all cores loaded LSA gets about 289 GB/s per core
+against AIDA64's about 305. Longer runs (<code>--seconds 5</code>), one
+thread per core, 256-bit loads and per-thread buffer offsets were all
+tried; none closed the gap without pushing other cells away from the
+reference. So it is left as measured. See
+<code>CHANGELOG.md</code>.</li>
+<li><strong>Every other cell is within about 3%</strong> of AIDA64 on
+the reference system.</li>
+<li><strong>Other CPUs are less tested.</strong> The matching work was
+done on one AMD Zen 4 X3D system. Intel CPUs and other AMD generations
+work, but their numbers have not been compared side by side.</li>
+<li><strong>Memory Write on non-AMD CPUs</strong> uses streaming stores,
+so it may read lower than AIDA64 on those.</li>
+<li><strong>North Bridge Clock</strong> is read only on AMD Ryzen 7000
+desktop CPUs (PM table version <code>0x540104</code>) with the
+<code>ryzen_smu</code> driver loaded; elsewhere it shows
+<code>n/a</code> and the reason. <strong>CPU FSB</strong> is measured on
+Linux when the CPU has an invariant TSC and ACPI CPPC; otherwise, and
+always on Windows, it shows <code>100.0 MHz (nominal)</code>.</li>
+<li><strong>Memory type and speed need the srs-root cache</strong> (see
+<a href="#user-guide--35-optional-memory-details-from-srs-sysinfo">3.5</a>).</li>
+<li><strong>Windows latency</strong> is higher than Linux latency unless
+Windows grants large pages (see <a href="#user-guide--11-windows-build">section
+11</a>).</li>
+<li><strong>Only the Cache &amp; Memory Benchmark exists so
+far.</strong> The other AIDA64 pages are planned.</li>
+</ul>
+<h2 id="user-guide--11-windows-build">11. Windows build</h2>
+<p>LSA also builds for 64-bit Windows, so you can run the same engine on
+the same PC under Windows and compare.</p>
+<h3 id="user-guide--111-install">11.1 Install</h3>
+<p>Each release has two Windows files:</p>
+<ul>
+<li><strong><code>lsa-sysinfo-&lt;version&gt;-setup.exe</code></strong>
+- installer. Installs for your user only, <strong>no administrator
+rights needed</strong>, into
+<code>%LOCALAPPDATA%\Programs\Linux System Audit</code>. Adds a
+Start-menu folder "Linux System Audit" with <strong>LSA Cache &amp;
+Memory Benchmark</strong> and an uninstall shortcut. A desktop shortcut
+is optional (a tick box in the installer). It also appears in Settings
+-&gt; Apps.</li>
+<li><strong><code>lsa-sysinfo-&lt;version&gt;-win64-portable.zip</code></strong>
+- no install. Unzip anywhere and run.</li>
+</ul>
+<p>Both contain:</p>
+<ul>
+<li><code>lsa-gui.exe</code> - the Cache &amp; Memory window (native
+Win32, no runtime needed).</li>
+<li><code>lsa.exe</code> - the command line, same options as Linux
+(<code>lsa cachemem ...</code>).</li>
+<li><code>LSA-User-Guide.html</code> - this guide (the installer adds a
+Start-menu shortcut to it). The <strong>Guide</strong> button and F1 in
+the window open it.</li>
+</ul>
+<p>Windows SmartScreen may warn about an unknown publisher, because the
+files are not code-signed.</p>
+<h3 id="user-guide--112-differences-on-windows">11.2 Differences on Windows</h3>
+<ul>
+<li><strong>Save</strong> writes a <strong>BMP</strong> picture plus a
+TXT file (Linux: PNG + TXT).</li>
+<li>The run history is
+<code>%LOCALAPPDATA%\LSA\cachemem-history.txt</code>.</li>
+<li>Memory details come from SMBIOS directly (no admin and no srs-root
+needed).</li>
+<li>CPU FSB shows <code>100.0 MHz (nominal)</code> and North Bridge
+Clock <code>n/a</code>: neither is read on Windows.</li>
+<li><strong>Latency and large pages:</strong> the memory latency test
+uses 2 MB large pages only if your Windows account has the <strong>"Lock
+pages in memory"</strong> right. Without it LSA falls back to 4 KB
+pages, which adds address-translation time, so Memory Latency reads
+higher. The status line says which was used. To grant it: run
+<code>secpol.msc</code> -&gt; Local Policies -&gt; User Rights
+Assignment -&gt; <strong>Lock pages in memory</strong> -&gt; add your
+user, then sign out and in again. (<code>secpol.msc</code> exists on Pro
+/ Enterprise editions.)</li>
+</ul>
+<h3 id="user-guide--113-uninstall-on-windows">11.3 Uninstall on Windows</h3>
+<p>Settings -&gt; Apps -&gt; <strong>Linux System Audit</strong> -&gt;
+Uninstall, or the uninstall shortcut in the Start menu folder. The
+portable zip: just delete the folder. The history file in
+<code>%LOCALAPPDATA%\LSA</code> stays; delete it by hand if you
+want.</p>
+<h2 id="user-guide--12-settings-and-files">12. Settings and files</h2>
+<p>LSA has <strong>no settings file</strong>. Everything is chosen per
+run (window: defaults; command line: options).</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>What</th>
+<th>Written by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>~/.cache/lsa/cachemem-history.txt</code></td>
+<td>One line per finished window run</td>
+<td><code>lsa-gui</code></td>
+</tr>
+<tr>
+<td><code>~/.cache/srs/root/dmidecode.txt</code></td>
+<td>Memory details (read only)</td>
+<td><code>srs-root</code> from srs-sysinfo</td>
+</tr>
+<tr>
+<td>your chosen <code>.png</code> + <code>.txt</code></td>
+<td>Saved results</td>
+<td>Save button</td>
+</tr>
+<tr>
+<td><code>/usr/bin/lsa</code>, <code>/usr/bin/lsa-gui</code></td>
+<td>The programs</td>
+<td>package</td>
+</tr>
+<tr>
+<td><code>/usr/share/applications/lsa-cachemem.desktop</code></td>
+<td>Menu entry</td>
+<td>package</td>
+</tr>
+<tr>
+<td><code>/usr/share/applications/lsa-user-guide.desktop</code></td>
+<td>Menu entry "LSA User Guide (PDF)"</td>
+<td>package</td>
+</tr>
+<tr>
+<td><code>/usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf</code>,
+<code>html/LSA-User-Guide.html</code></td>
+<td>This guide (PDF and HTML)</td>
+<td>package</td>
+</tr>
+<tr>
+<td><code>/usr/share/doc/lsa-sysinfo/</code></td>
+<td>README, CHANGELOG, EVIDENCE, CHECKLIST, the guide's Markdown
+files</td>
+<td>package</td>
+</tr>
+<tr>
+<td><code>/sys/kernel/ryzen_smu_drv/pm_table</code></td>
+<td>North Bridge Clock (read only, optional)</td>
+<td><code>ryzen_smu</code> driver</td>
+</tr>
+</tbody>
+</table>
+<p><code>lsa-gui</code> with arguments behaves as the command line
+(<code>lsa-gui cachemem ...</code> = <code>lsa cachemem ...</code>).
+<code>lsa-gui --gui-start</code> opens the window and starts a run
+straight away (it still asks first).</p>
+<h2 id="user-guide--13-troubleshooting">13. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Numbers much lower than expected, or very different between
+runs</td>
+<td>Something else is using the CPU or memory. Check with
+<code>top</code> or a system monitor. Close it, wait, run again.
+Laptops: plug in the charger and use a performance power profile.</td>
+</tr>
+<tr>
+<td>Memory Latency is 120-160 ns, far above normal</td>
+<td>Another memory benchmark (for example AIDA64 under Wine, or a second
+LSA) is running at the same time. Run only one.</td>
+</tr>
+<tr>
+<td>Memory Bus / Memory Type say "run srs-root once" or "unknown"</td>
+<td>Install srs-sysinfo and run <code>pkexec srs-root</code> once (see
+<a href="#user-guide--35-optional-memory-details-from-srs-sysinfo">3.5</a>). Restart
+the window.</td>
+</tr>
+<tr>
+<td>Memory speed shows lower than your kit's rating (e.g. 4800 instead
+of 6000)</td>
+<td>Your BIOS is not using the XMP / EXPO profile. Enable it in the
+BIOS.</td>
+</tr>
+<tr>
+<td>"could not allocate the test memory" (command line)</td>
+<td>Not enough free RAM. Close programs and try again.
+(<code>--mem-mib</code> cannot go below 256 MiB or 4 x L3.)</td>
+</tr>
+<tr>
+<td>Memory Latency higher than expected on Linux</td>
+<td>Transparent huge pages may be off. Check
+<code>cat /sys/kernel/mm/transparent_hugepage/enabled</code>; it should
+show <code>[always]</code> or <code>[madvise]</code>, not
+<code>[never]</code>.</td>
+</tr>
+<tr>
+<td>Status line says SSE2 or AVX2 on a CPU that has AVX-512</td>
+<td>Some CPUs have AVX-512 turned off in the BIOS or by microcode. LSA
+uses what the CPU reports.</td>
+</tr>
+<tr>
+<td>The window does not open from the terminal over SSH</td>
+<td>It needs a desktop session. Use the command line
+<code>lsa cachemem</code> instead.</td>
+</tr>
+<tr>
+<td><code>lsa</code> runs a different program (prints a file list)</td>
+<td>Your shell has an alias or function called <code>lsa</code> (some
+zsh and fish setups use it for <code>ls -a</code>). Run
+<code>command lsa cachemem</code>, use the full path
+<code>/usr/bin/lsa</code>, or remove the alias.</td>
+</tr>
+<tr>
+<td>Windows: Memory Latency higher than on Linux</td>
+<td>Grant "Lock pages in memory" (see <a
+href="#user-guide--112-differences-on-windows">11.2</a>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="user-guide--14-uninstall">14. Uninstall</h2>
+<ul>
+<li><strong>Arch (AUR or package):</strong>
+<code>sudo pacman -R lsa-sysinfo</code></li>
+<li><strong>Generic tarball in /usr/local:</strong> remove the files
+listed in the tarball, for example
+<code>sudo rm /usr/local/bin/lsa /usr/local/bin/lsa-gui /usr/local/share/applications/lsa-cachemem.desktop /usr/local/share/icons/hicolor/256x256/apps/lsa.png</code>
+and
+<code>sudo rm -r /usr/local/share/doc/lsa-sysinfo /usr/local/share/licenses/lsa-sysinfo</code></li>
+<li><strong><code>make install</code> (per user):</strong> remove the
+same files under <code>~/.local</code>.</li>
+<li><strong>Your data:</strong> <code>rm -r ~/.cache/lsa</code> deletes
+the run history. Saved PNG/TXT files are wherever you saved them.</li>
+<li><strong>Windows:</strong> see <a
+href="#user-guide--113-uninstall-on-windows">11.3</a>.</li>
+</ul>
+<h2 id="user-guide--15-faq">15. FAQ</h2>
+<p><strong>Is LSA the same as AIDA64?</strong> No. It is an independent,
+clean-room program that measures the same things in the same layout, so
+the numbers can be compared. It is not made by FinalWire and contains
+nothing from AIDA64.</p>
+<p><strong>Can it damage my PC?</strong> No more than any heavy program.
+It only reads and writes ordinary memory it allocated itself. It does
+not change any setting, clock or voltage. The run lasts about 20
+seconds; the CPU gets warm like under any full load.</p>
+<p><strong>Why is Copy bigger than Read?</strong> Copy counts bytes read
+plus bytes written. For caches that adds up to more than Read alone.</p>
+<p><strong>Why are caches in GB/s and memory in MB/s?</strong> To match
+the familiar layout, and because cache figures would have too many
+digits in MB/s.</p>
+<p><strong>Why is my Memory Write much higher than Memory Read?</strong>
+On AMD CPUs with CLZERO, Memory Write measures the memory's own write
+speed (see <a href="#user-guide--72-memory-write-on-amd-cpus-clzero">7.2</a>). Reads
+have to come all the way back to the cores through the fabric, writes of
+zeros do not.</p>
+<p><strong>Does it need root?</strong> No. Only the optional memory
+details come from a root-made cache (srs-root).</p>
+<p><strong>Can I run it from a script?</strong> Yes:
+<code>lsa cachemem</code> prints plain text. It asks before it starts;
+add <code>--yes</code> in scripts (without a terminal and without
+<code>--yes</code> it does not start). See <a
+href="#cli-reference">CLI-REFERENCE.md</a>.</p>
+<p><strong>Why does the window say OctalCore?</strong> That is the core
+count written as a word (8 cores = Octal), as in the classic report
+style.</p>
+<p><strong>Does it work on ARM?</strong> No. The benchmark loops are
+x86-64 only.</p>
+<h2 id="user-guide--16-glossary">16. Glossary</h2>
+<p>The full glossary is in <a href="#glossary">GLOSSARY.md</a>. The
+most important words:</p>
+<ul>
+<li><strong>Bandwidth</strong> - how much data moves per second. Higher
+is better.</li>
+<li><strong>Latency</strong> - how long one read takes. Lower is
+better.</li>
+<li><strong>Cache (L1, L2, L3)</strong> - small, fast memory inside the
+CPU that keeps recently used data close.</li>
+<li><strong>MB/s, GB/s</strong> - megabytes / gigabytes per second
+(decimal: 1 MB = 1,000,000 bytes).</li>
+<li><strong>ns</strong> - nanosecond, one billionth of a second.</li>
+<li><strong>CLZERO</strong> - an AMD instruction that writes a whole
+64-byte line of zeros to memory.</li>
+<li><strong>AVX-512 / AVX2 / SSE2</strong> - sets of wide CPU
+instructions that move 64 / 32 / 16 bytes at a time.</li>
+<li><strong>srs-root</strong> - the root helper from srs-sysinfo that
+saves memory details LSA can read.</li>
+</ul>
+
+</section><section class="doc" id="results">
+<h1 id="results--linux-system-audit---result-reference">Linux System Audit -
+Result Reference</h1>
+<p><a href="#user-guide">Back to the User Guide</a> - <a
+href="#cli-reference">Command-line reference</a> - <a
+href="#glossary">Glossary</a></p>
+<p>One short section for every value LSA shows: the 16 cells of the grid
+and the lines below it. In the window, <strong>right-click a
+value</strong> and choose <strong>Open guide</strong>, or point at it
+and press <strong>F1</strong>, to jump straight here. On the command
+line, <code>lsa guide ITEM</code> does the same
+(<code>lsa guide --list</code> shows the items).</p>
+<p>Each section starts with the plain-English meaning, then the detail.
+Example figures are from the author's PC (Ryzen 7 7800X3D, 2 x 16 GB
+DDR5-6000, FCLK 2133) unless a section says otherwise.</p>
+<hr />
+<h2 id="results--memory-read">Memory Read</h2>
+<p><code>mem-read</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how much data per second the whole
+CPU can read from your RAM sticks. Higher is better.</p>
+<ul>
+<li>Every CPU thread reads its own part of a block far bigger than all
+caches (default 1 GB in total, at least 4 x L3, at most a quarter of
+free RAM), so the data really comes from RAM.</li>
+<li>Shown in MB/s (1 MB = 1,000,000 bytes). Example: about 67,700
+MB/s.</li>
+<li>What moves it: memory speed (MT/s), number of channels, on AMD the
+fabric clock (FCLK, see <a href="#results--north-bridge-clock">North Bridge
+Clock</a>) and UCLK ratio, background load.</li>
+<li>Detail: <a href="#user-guide--71-bandwidth-tests">How the tests
+work</a>.</li>
+</ul>
+<h2 id="results--memory-write">Memory Write</h2>
+<p><code>mem-write</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how much data per second the CPU can
+write to RAM. Higher is better.</p>
+<ul>
+<li>On AMD CPUs with the CLZERO instruction LSA writes whole zeroed
+64-byte lines straight to memory, one thread per physical core. That
+measures what the memory itself can take: about 93,000 MB/s on the
+example PC.</li>
+<li>Other CPUs use streaming stores (writes that bypass the caches).
+<code>--mem-write stream</code> shows that figure on AMD too; it is much
+lower there (about 33,000 MB/s), because of the link between the cores
+and the memory controller.</li>
+<li>Detail: <a
+href="#user-guide--72-memory-write-on-amd-cpus-clzero">Memory Write on
+AMD CPUs</a>.</li>
+</ul>
+<h2 id="results--memory-copy">Memory Copy</h2>
+<p><code>mem-copy</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast the CPU can read data from
+one place in RAM and write it to another.</p>
+<ul>
+<li>LSA counts <strong>both</strong> the bytes read and the bytes
+written, the usual convention, so Copy is close to Read rather than half
+of it. Example: about 67,400 MB/s.</li>
+<li>The writes are streaming stores. Same factors as <a
+href="#results--memory-read">Memory Read</a>.</li>
+</ul>
+<h2 id="results--memory-latency">Memory Latency</h2>
+<p><code>mem-latency</code> - grid cell, latency</p>
+<p><strong>In plain words:</strong> how long the CPU waits for one
+single, unpredictable read from RAM. Lower is better.</p>
+<ul>
+<li>One thread follows a random chain of pointers through a block of 8 x
+L3 (at least 256 MB, at most half of free RAM) on 2 MB pages, so the CPU
+cannot guess the next address.</li>
+<li>Shown in ns (nanoseconds). Example: about 80-82 ns. Typical DDR5:
+60-90 ns.</li>
+<li>What moves it: memory timings (CL, tRCD, ...), memory speed, FCLK
+and the UCLK ratio.</li>
+<li>If it reads 120-160 ns, another memory benchmark is probably running
+at the same time.</li>
+<li>Detail: <a href="#user-guide--73-latency-test">Latency
+test</a>.</li>
+</ul>
+<h2 id="results--l1-cache-read">L1 Cache Read</h2>
+<p><code>l1-read</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together read
+from their own tiny, fastest cache.</p>
+<ul>
+<li>Each thread works on half of its L1 data cache. Shown in GB/s.
+Example: about 2250-2330 GB/s.</li>
+<li>Depends on the CPU clock and the code path (AVX-512 reads 64 bytes
+per instruction, AVX2 32).</li>
+<li>Known difference: about 5% below AIDA64 on the reference system. See
+<a
+href="#user-guide--10-known-limits-and-known-differences-from-aida64">Known
+limits</a>.</li>
+</ul>
+<h2 id="results--l1-cache-write">L1 Cache Write</h2>
+<p><code>l1-write</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together write
+into their L1 cache.</p>
+<ul>
+<li>About half of L1 Read (example: about 1280 GB/s), because a core can
+do two reads but only one write per clock tick.</li>
+</ul>
+<h2 id="results--l1-cache-copy">L1 Cache Copy</h2>
+<p><code>l1-copy</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> read and write inside the L1 cache
+at the same time.</p>
+<ul>
+<li>Counts bytes read plus bytes written, so it can be higher than Read.
+Example: about 2460 GB/s.</li>
+</ul>
+<h2 id="results--l1-cache-latency">L1 Cache Latency</h2>
+<p><code>l1-latency</code> - grid cell, latency</p>
+<p><strong>In plain words:</strong> the wait for one read that hits the
+L1 cache.</p>
+<ul>
+<li>One thread, random pointer chase over half of L1d. Example: 0.8 ns,
+about 4-5 clock ticks. It only changes with the CPU clock.</li>
+</ul>
+<h2 id="results--l2-cache-read">L2 Cache Read</h2>
+<p><code>l2-read</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together read
+from their L2 caches (bigger and a bit slower than L1, still one per
+core).</p>
+<ul>
+<li>Each thread works on half of its share of L2. Example: about 1240
+GB/s.</li>
+<li>Depends on the CPU clock.</li>
+</ul>
+<h2 id="results--l2-cache-write">L2 Cache Write</h2>
+<p><code>l2-write</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together write
+into their L2 caches.</p>
+<ul>
+<li>Example: about 1200 GB/s. Depends on the CPU clock.</li>
+</ul>
+<h2 id="results--l2-cache-copy">L2 Cache Copy</h2>
+<p><code>l2-copy</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> read and write inside the L2 cache
+at the same time (bytes read plus bytes written).</p>
+<ul>
+<li>Example: about 1215 GB/s.</li>
+</ul>
+<h2 id="results--l2-cache-latency">L2 Cache Latency</h2>
+<p><code>l2-latency</code> - grid cell, latency</p>
+<p><strong>In plain words:</strong> the wait for one read that hits the
+L2 cache.</p>
+<ul>
+<li>Random pointer chase over half of L2, 4 KB pages. Example: 3.6-3.9
+ns.</li>
+</ul>
+<h2 id="results--l3-cache-read">L3 Cache Read</h2>
+<p><code>l3-read</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together read
+from the L3 cache, the big cache the cores share.</p>
+<ul>
+<li>Each thread works on half of its share of L3. Example: about 700-760
+GB/s.</li>
+<li>Depends on the CPU clock and, more than L1/L2, on background load
+(other programs use L3 too).</li>
+</ul>
+<h2 id="results--l3-cache-write">L3 Cache Write</h2>
+<p><code>l3-write</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> how fast all cores together write
+into the shared L3 cache.</p>
+<ul>
+<li>Example: about 640 GB/s.</li>
+</ul>
+<h2 id="results--l3-cache-copy">L3 Cache Copy</h2>
+<p><code>l3-copy</code> - grid cell, bandwidth</p>
+<p><strong>In plain words:</strong> read and write inside the L3 cache
+at the same time (bytes read plus bytes written).</p>
+<ul>
+<li>Example: about 715 GB/s.</li>
+</ul>
+<h2 id="results--l3-cache-latency">L3 Cache Latency</h2>
+<p><code>l3-latency</code> - grid cell, latency</p>
+<p><strong>In plain words:</strong> the wait for one read that hits the
+L3 cache.</p>
+<ul>
+<li>Random pointer chase over 8 x the L2 size. Example: about 11.6
+ns.</li>
+</ul>
+<h2 id="results--cpu-type">CPU Type</h2>
+<p><code>cpu-type</code> - system line</p>
+<p><strong>In plain words:</strong> which processor you have, with the
+core count written as a word.</p>
+<ul>
+<li>Example: <code>OctalCore AMD Ryzen 7 7800X3D</code> (8 cores =
+Octal). From <code>/proc/cpuinfo</code> (Windows: CPUID).</li>
+</ul>
+<h2 id="results--cpu-stepping">CPU Stepping</h2>
+<p><code>cpu-stepping</code> - system line</p>
+<p><strong>In plain words:</strong> the CPU's design name and
+revision.</p>
+<ul>
+<li>Example: <code>Raphael, stepping 2  (family 19h model 61h)</code>.
+The code name comes from a built-in table of public CPU IDs; unknown
+CPUs show only family, model and stepping.</li>
+</ul>
+<h2 id="results--cpu-clock">CPU Clock</h2>
+<p><code>cpu-clock</code> - system line</p>
+<p><strong>In plain words:</strong> how fast one core was actually
+ticking a moment ago.</p>
+<ul>
+<li>LSA <strong>measures</strong> it with a short timing loop (it is not
+the number on the box). Example: about 4850-4970 MHz. It moves a little
+from run to run, because modern CPUs change clock all the time.</li>
+</ul>
+<h2 id="results--cpu-fsb">CPU FSB</h2>
+<p><code>cpu-fsb</code> - system line</p>
+<p><strong>In plain words:</strong> the base (reference) clock that the
+CPU clock is a multiple of. Usually 100 MHz; some boards let you raise
+it (on ASUS AM5 boards this is "eCLK").</p>
+<ul>
+<li><strong>Linux:</strong> measured as TSC rate x 100 / the CPU's
+nominal frequency
+(<code>/sys/devices/system/cpu/cpu0/acpi_cppc/nominal_freq</code>). The
+TSC is a counter that runs at the CPU's nominal clock times the base
+clock / 100, so this gives the real base clock. Example:
+<code>105.0 MHz</code> on a board set to eCLK 105.</li>
+<li>It needs an invariant TSC (<code>constant_tsc</code> in
+<code>/proc/cpuinfo</code>) and the ACPI CPPC <code>nominal_freq</code>
+file. Without them LSA shows <code>100.0 MHz (nominal)</code>.</li>
+<li><strong>Windows:</strong> always <code>100.0 MHz (nominal)</code> -
+not measured.</li>
+</ul>
+<h2 id="results--cpu-multiplier">CPU Multiplier</h2>
+<p><code>cpu-multiplier</code> - system line</p>
+<p><strong>In plain words:</strong> how many times faster than the base
+clock the core runs.</p>
+<ul>
+<li>CPU Clock / CPU FSB. Example: 4846 MHz / 105.0 MHz =
+<code>46.16x</code>.</li>
+<li>When the FSB is the nominal 100 MHz, it is CPU Clock / 100.</li>
+</ul>
+<h2 id="results--north-bridge-clock">North Bridge Clock</h2>
+<p><code>nb-clock</code> - system line</p>
+<p><strong>In plain words:</strong> on AMD Ryzen, the speed of the
+Infinity Fabric (FCLK), the internal link between the cores and the
+memory controller. A faster fabric helps memory bandwidth and
+latency.</p>
+<ul>
+<li>Read from the PM table of the <code>ryzen_smu</code> kernel driver
+(<code>/sys/kernel/ryzen_smu_drv/pm_table</code>), read-only. Example:
+<code>2133.0 MHz</code> (FCLK 2133).</li>
+<li>Only the PM table layout <code>0x540104</code> (Ryzen 7000 desktop,
+Zen 4) is known to LSA. Other cases show why the value is missing:
+<ul>
+<li><code>n/a (ryzen_smu driver not loaded)</code> - the driver is not
+installed or not loaded.</li>
+<li><code>n/a (PM table version 0x...... not supported)</code> - a CPU
+whose table layout LSA does not know.</li>
+<li><code>n/a (ryzen_smu pm_table not readable)</code> - the file exists
+but this user may not read it.</li>
+</ul></li>
+<li><strong>Windows:</strong> not read (<code>n/a</code>).</li>
+</ul>
+<h2 id="results--memory-bus">Memory Bus</h2>
+<p><code>memory-bus</code> - system line</p>
+<p><strong>In plain words:</strong> the real clock of your RAM, half the
+"MT/s" figure on the box.</p>
+<ul>
+<li>Example: <code>3000.0 MHz</code> for DDR5-6000.</li>
+<li>Linux: from the root DMI cache written by <code>srs-root</code>
+(srs-sysinfo), because reading it needs root. Without it the line says
+<code>run srs-root once for DIMM data</code>. Windows: from SMBIOS.</li>
+</ul>
+<h2 id="results--dramfsb-ratio">DRAM:FSB Ratio</h2>
+<p><code>dram-fsb</code> - system line</p>
+<p><strong>In plain words:</strong> how many times faster than the base
+clock the memory clock is.</p>
+<ul>
+<li>Memory Bus / CPU FSB. A whole ratio is shown as <code>30:1</code>;
+otherwise with one decimal, for example <code>DRAM:FSB 28.6:1</code>
+(3000 MHz / 105.0 MHz).</li>
+<li>Needs the Memory Bus value (see above).</li>
+</ul>
+<h2 id="results--memory-type">Memory Type</h2>
+<p><code>memory-type</code> - system line</p>
+<p><strong>In plain words:</strong> the kind of RAM, its speed and how
+many sticks and channels.</p>
+<ul>
+<li>Example: <code>Dual Channel DDR5-6000 SDRAM  (2 DIMMs)</code>. Same
+source as Memory Bus.</li>
+<li>If the speed is lower than your kit's rating, XMP / EXPO is probably
+off in the BIOS.</li>
+</ul>
+<h2 id="results--chipset">Chipset</h2>
+<p><code>chipset</code> - system line</p>
+<p><strong>In plain words:</strong> the motherboard's support chip and
+the CPU platform.</p>
+<ul>
+<li>Example: <code>AMD X870, AMD Raphael/Granite Ridge</code>. The
+chipset model comes from the board name, the platform from the PCI root
+complex name in hwdata <code>pci.ids</code>.</li>
+</ul>
+<h2 id="results--motherboard">Motherboard</h2>
+<p><code>motherboard</code> - system line</p>
+<p><strong>In plain words:</strong> who made your motherboard and its
+model name.</p>
+<ul>
+<li>From <code>/sys/class/dmi/id/board_vendor</code> and
+<code>board_name</code> (Windows: SMBIOS).</li>
+</ul>
+<h2 id="results--bios-version">BIOS Version</h2>
+<p><code>bios</code> - system line</p>
+<p><strong>In plain words:</strong> the version and date of the firmware
+that starts the PC.</p>
+<ul>
+<li>From <code>/sys/class/dmi/id/bios_version</code> and
+<code>bios_date</code> (Windows: SMBIOS). Example:
+<code>1805  (09/18/2026)</code>.</li>
+</ul>
+<h2 id="results--code-path">Code path</h2>
+<p><code>code-path</code> - status / last command-line line</p>
+<p><strong>In plain words:</strong> which set of CPU instructions the
+test loops used, and how many threads.</p>
+<ul>
+<li>AVX-512 (64 bytes per instruction), AVX2 (32) or SSE2 (16): the
+widest your CPU has, unless <code>--isa</code> asked for a narrower one.
+Cache bandwidth depends on it strongly, memory bandwidth hardly.</li>
+<li>The command line also lists the cache sizes LSA read from the kernel
+and the Memory Write method.</li>
+<li>Detail: <a href="#user-guide--74-code-paths-avx-512-avx2-sse2">Code
+paths</a>.</li>
+</ul>
+
+</section><section class="doc" id="cli-reference">
+<h1 id="cli-reference--linux-system-audit---command-line-reference">Linux System Audit
+- Command-Line Reference</h1>
+<p><a href="#user-guide">Back to the User Guide</a> - <a
+href="#glossary">Glossary</a></p>
+<p>Linux System Audit is a clean-room Linux implementation of AIDA64
+Business features. AIDA64 is by FinalWire Ltd.; LSA is not affiliated
+with or endorsed by FinalWire.</p>
+<hr />
+<h2 id="cli-reference--in-plain-words">In plain words</h2>
+<p>There is one command, <code>lsa</code>. <code>lsa cachemem</code>
+runs the Cache &amp; Memory Benchmark and prints the result grid as
+text; <code>lsa guide</code> opens this guide at the section for one
+value.</p>
+<blockquote>
+<p><strong>Before a run:</strong> the benchmark loads every CPU thread
+and the memory bus for about 20 seconds. Like the window, the command
+line <strong>asks first</strong> (<code>Start now? [y/N]</code>). In
+scripts add <code>--yes</code>; without a terminal and without
+<code>--yes</code> it does not start. Close other heavy programs first,
+and never run it while another memory benchmark (for example AIDA64
+under Wine) is running.</p>
+</blockquote>
+<p><code>lsa-gui</code> given any argument that does not start with
+<code>--gui</code> behaves exactly like <code>lsa</code> (for example
+<code>lsa-gui cachemem --only mem</code>). On Windows the same command
+is <code>lsa.exe</code>.</p>
+<h2 id="cli-reference--synopsis">Synopsis</h2>
+<pre><code>lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]
+             [--only mem,l1,l2,l3] [--tests read,write,copy,latency] [--mib]
+             [--mem-write auto|clzero|stream] [--yes]
+lsa guide [ITEM] [--print]
+lsa guide --list
+lsa --version
+lsa --help | -h</code></pre>
+<h2 id="cli-reference--commands">Commands</h2>
+<h3 id="cli-reference--lsa---help-lsa--h"><code>lsa --help</code>,
+<code>lsa -h</code></h3>
+<p>Prints the usage text. Exit code 0. (<code>lsa</code> with no
+arguments, or with an unknown command, prints the same text and exits
+with code 2.)</p>
+<pre><code>usage: lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]
+                    [--only mem,l1,l2,l3] [--tests read,write,copy,latency] [--mib]
+                    [--mem-write auto|clzero|stream] [--yes]
+       lsa guide [ITEM] [--print] | lsa guide --list
+       lsa --version | --help
+
+cachemem  Cache &amp; Memory benchmark: Read / Write / Copy (MB/s) and Latency (ns) of
+          Memory, L1, L2 and L3. Uses every CPU thread and the memory bus for ~20 s.
+          Asks before it starts; --yes (or -y) starts at once, e.g. in scripts.
+guide     Open the user guide at ITEM&#39;s section (e.g. mem-latency, cpu-fsb); --print shows
+          the command instead of running it; --list lists the items.</code></pre>
+<h3 id="cli-reference--lsa---version"><code>lsa --version</code></h3>
+<pre><code>Linux System Audit (lsa) 0.2.0
+Clean-room Linux implementation of AIDA64 Business features. AIDA64 is by FinalWire Ltd. (aida64.com);
+Linux System Audit is not affiliated with FinalWire. GPL-2.0-or-later.</code></pre>
+<h3 id="cli-reference--lsa-cachemem-options"><code>lsa cachemem [options]</code></h3>
+<p>Runs the benchmark. With no options it measures all 16 cells (4
+levels x 4 tests) with the defaults below, exactly as the window does.
+It asks first unless <code>--yes</code> is given.
+<code>lsa cachemem --help</code> prints the usage text and exits with
+code 0.</p>
+<h2 id="cli-reference--options-for-cachemem">Options for <code>cachemem</code></h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--threads N</code></td>
+<td>all logical CPUs</td>
+<td>Use only N worker threads for the bandwidth tests (on CPUs 0..N-1 of
+the allowed set). Values of 0, negative, or more than the CPU count mean
+"all". Latency always uses 1 thread.</td>
+</tr>
+<tr>
+<td><code>--seconds S</code></td>
+<td><code>1</code></td>
+<td>Measuring time per cell, in seconds. Longer runs do not change the
+result much (5 s gives the same figures as 1 s on the reference PC);
+they mostly cost time.</td>
+</tr>
+<tr>
+<td><code>--isa avx512|avx2|sse2</code></td>
+<td>widest the CPU supports</td>
+<td>Force a narrower code path. Asking for one the CPU lacks falls back
+to the best it has. Any other word stops with an error that lists the
+valid values.</td>
+</tr>
+<tr>
+<td><code>--mem-mib M</code></td>
+<td>auto (1024 MiB, capped at a quarter of available RAM)</td>
+<td>Total size of the Memory bandwidth block, in MiB, for all threads
+together. Use a smaller value on PCs with little free RAM. Values below
+256 MiB or 4 x L3 (whichever is bigger) are raised to that, so the block
+can never fit in the caches.</td>
+</tr>
+<tr>
+<td><code>--only LIST</code></td>
+<td>all levels</td>
+<td>Measure only these levels. Comma-separated words: <code>mem</code>,
+<code>l1</code>, <code>l2</code>, <code>l3</code>.</td>
+</tr>
+<tr>
+<td><code>--tests LIST</code></td>
+<td>all tests</td>
+<td>Measure only these tests. Comma-separated words: <code>read</code>,
+<code>write</code>, <code>copy</code>, <code>latency</code>
+(<code>lat</code> also works).</td>
+</tr>
+<tr>
+<td><code>--mib</code></td>
+<td>off</td>
+<td>Show binary units: MiB/s for memory and GiB/s for caches (1 MiB =
+1,048,576 bytes, 1 GiB = 1024 MiB).</td>
+</tr>
+<tr>
+<td><code>--yes</code>, <code>-y</code></td>
+<td>off</td>
+<td>Start without asking. Needed when there is no terminal (scripts,
+cron). The environment variable <code>LSA_TEST_NOCONFIRM</code> does the
+same.</td>
+</tr>
+<tr>
+<td><code>--mem-write auto|clzero|stream</code></td>
+<td><code>auto</code></td>
+<td>How Memory Write is measured. <code>auto</code>: CLZERO on AMD CPUs
+that have it, streaming stores elsewhere. <code>stream</code>: always
+streaming stores (shows the core-to-memory link limit on AMD).
+<code>clzero</code>: same as auto (CLZERO is used only if the CPU has
+it).</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li><code>--only</code> and <code>--tests</code> combine:
+<code>--only l1 --tests read</code> measures one cell (L1 Read). If you
+give only one of them, the other means "all".</li>
+<li>An unknown word in <code>--only</code>, <code>--tests</code>,
+<code>--isa</code> or <code>--mem-write</code> stops at once, before
+anything runs, with the valid values, for example:
+<code>cachemem: unknown --only value 'l4' (valid: mem, l1, l2, l3)</code>
+(exit code 2).</li>
+<li>An unknown option prints an error and the usage text and exits with
+code 2 without running anything.</li>
+</ul>
+<h2 id="cli-reference--output">Output</h2>
+<p>While it runs, one progress line per finished cell goes to
+<strong>standard error</strong>:</p>
+<pre><code>  L1 Cache Read      2292344 MB/s</code></pre>
+<p>(progress lines always show MB/s and ns, without converting caches to
+GB/s).</p>
+<p>At the end, the result goes to <strong>standard output</strong>:</p>
+<pre><code>Linux System Audit 0.1.3 - Cache &amp; Memory Benchmark
+
+                     Read          Write           Copy      Latency
+Memory          67678 MB/s     93211 MB/s     67373 MB/s      81.8 ns
+L1 Cache       2292.3 GB/s    1279.0 GB/s    2459.7 GB/s       0.8 ns
+L2 Cache       1240.2 GB/s    1198.0 GB/s    1215.6 GB/s       3.9 ns
+L3 Cache       764.39 GB/s    637.68 GB/s    715.16 GB/s      11.6 ns
+
+CPU Type         OctalCore AMD Ryzen 7 7800X3D
+CPU Stepping     Raphael, stepping 2  (family 19h model 61h)
+CPU Clock        4968.7 MHz
+CPU FSB          105.0 MHz  (multiplier 47.32x)
+NB Clock         2133.0 MHz
+Memory Bus       3000.0 MHz  DRAM:FSB 28.6:1
+Memory Type      Dual Channel DDR5-6000 SDRAM  (2 DIMMs)
+Chipset          AMD X870, AMD Raphael/Granite Ridge
+Motherboard      ASUSTeK COMPUTER INC. TUF GAMING X870-PRO WIFI7 W NEO
+BIOS Version     1805  (09/18/2026)
+Code path        AVX-512, 16 threads; L1d 32 KB, L2 1024 KB, L3 98304 KB; Memory Write: CLZERO, one thread per core</code></pre>
+<p>(Example values from the author's PC: the grid comes from a saved
+run, the system lines from the same machine with its base clock (eCLK)
+at 105 MHz and FCLK at 2133 MHz. What each line means: <a
+href="#results">RESULTS.md</a>.)</p>
+<p>A one-cell run
+(<code>lsa cachemem --only l1 --tests latency --yes</code>, about 2
+seconds) looks like this:</p>
+<pre><code>Linux System Audit 0.1.3 - Cache &amp; Memory Benchmark
+
+                     Read          Write           Copy      Latency
+Memory                  -              -              -            -
+L1 Cache                -              -              -       0.8 ns
+L2 Cache                -              -              -            -
+L3 Cache                -              -              -            -
+
+CPU Type         OctalCore AMD Ryzen 7 7800X3D
+...
+Code path        AVX-512, 16 threads; L1d 32 KB, L2 1024 KB, L3 98304 KB</code></pre>
+<ul>
+<li>A cell that was not measured shows <code>-</code>.</li>
+<li>The "Memory Write: ..." note at the end of the last line appears
+only when Memory Write was measured.</li>
+<li>Cache cells use two decimals below 1000 GB/s and one decimal
+above.</li>
+<li>The last line tells you the code path, thread count, the cache sizes
+LSA read from the kernel, and the Memory Write method.</li>
+<li>Command-line runs are <strong>not</strong> added to
+<code>~/.cache/lsa/cachemem-history.txt</code> (only window runs
+are).</li>
+</ul>
+<h2 id="cli-reference--exit-codes">Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Finished, or <code>--help</code> / <code>--version</code> /
+<code>guide</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>The test memory could not be allocated
+(<code>cachemem: could not allocate the test memory</code>), or the
+guide could not be opened</td>
+</tr>
+<tr>
+<td>2</td>
+<td>No command, unknown command, unknown option or value, or the run was
+not confirmed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cli-reference--examples">Examples</h2>
+<pre><code># Full run, save the result (asks first; the question goes to the terminal, not the file)
+lsa cachemem &gt; cachemem-$(date +%F).txt
+
+# Memory only (Read, Write, Copy, Latency) - about 6 seconds
+lsa cachemem --only mem
+
+# Just memory latency, e.g. after changing timings (one thread, about 1-2 seconds)
+lsa cachemem --only mem --tests latency
+
+# One cheap cell, to check the program works
+lsa cachemem --only l1 --tests read
+
+# Compare streaming-store Memory Write with the CLZERO figure (AMD)
+lsa cachemem --only mem --tests write
+lsa cachemem --only mem --tests write --mem-write stream
+
+# Compare code paths
+lsa cachemem --only l1,l2 --isa avx2
+
+# A smaller memory block (e.g. a PC with little free RAM)
+lsa cachemem --mem-mib 512
+
+# Run 3 times and keep all results
+for i in 1 2 3; do lsa cachemem --yes &gt;&gt; runs.txt; sleep 30; done</code></pre>
+<h2
+id="cli-reference--lsa-guide-item---print"><code>lsa guide [ITEM] [--print]</code></h2>
+<p>Opens the user guide at the section for one value, the same as
+right-clicking it in the window.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lsa guide</code></td>
+<td>Opens the guide at the start.</td>
+</tr>
+<tr>
+<td><code>lsa guide ITEM</code></td>
+<td>Opens the guide at ITEM's section, e.g.
+<code>lsa guide mem-latency</code>, <code>lsa guide cpu-fsb</code>.</td>
+</tr>
+<tr>
+<td><code>lsa guide ITEM --print</code></td>
+<td>Shows which section and which command would be used, without opening
+anything.</td>
+</tr>
+<tr>
+<td><code>lsa guide --list</code></td>
+<td>Lists the item names: <code>mem-read</code> ...
+<code>l3-latency</code> for the 16 cells, <code>cpu-type</code>,
+<code>cpu-fsb</code>, <code>nb-clock</code> and so on for the lines
+below the grid, and <code>code-path</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The guide opens in the PDF viewer if it can jump to a section
+(Okular, Evince, Papers), otherwise the HTML version opens in the web
+browser. It is looked for in <code>$LSA_DOC_DIR</code>,
+<code>/usr/share/doc/lsa-sysinfo</code> and beside the program. On
+Windows, <code>lsa.exe guide</code> opens
+<code>LSA-User-Guide.html</code> from the program's folder (at the
+start; Windows does not pass the section on).</p>
+<pre><code>$ lsa guide nb-clock --print
+Item     nb-clock
+Section  results--north-bridge-clock
+Command  &#39;okular&#39; &#39;/usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf#results--north-bridge-clock&#39;</code></pre>
+<h2 id="cli-reference--shell-aliases-named-lsa">Shell aliases named
+<code>lsa</code></h2>
+<p>Some shell setups (Oh My Zsh, some fish configurations) define
+<code>lsa</code> as an alias for <code>ls -a</code>. If
+<code>lsa --version</code> prints a file list, run
+<code>command lsa ...</code> or <code>/usr/bin/lsa ...</code>, or remove
+the alias.</p>
+<h2 id="cli-reference--the-windows-command-line-switches">The window's command-line
+switches</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lsa-gui</code></td>
+<td>Opens the Cache &amp; Memory Benchmark window.</td>
+</tr>
+<tr>
+<td><code>lsa-gui --gui-start</code></td>
+<td>Opens the window and starts a run at once (the confirmation dialog
+still appears).</td>
+</tr>
+<tr>
+<td><code>lsa-gui cachemem ...</code></td>
+<td>Same as <code>lsa cachemem ...</code> (no window).</td>
+</tr>
+</tbody>
+</table>
+
+</section><section class="doc" id="glossary">
+<h1 id="glossary--linux-system-audit---glossary">Linux System Audit -
+Glossary</h1>
+<p><a href="#user-guide">Back to the User Guide</a> - <a
+href="#cli-reference">Command-line reference</a></p>
+<p>Plain-English meanings of the words used in the LSA documents, A to
+Z.</p>
+<ul>
+<li><strong>AIDA64</strong> - a system information and benchmark program
+for Windows made by FinalWire Ltd. LSA copies its Cache &amp; Memory
+Benchmark layout so results can be compared. LSA is not affiliated with
+FinalWire.</li>
+<li><strong>AVX2</strong> - "Advanced Vector Extensions 2". CPU
+instructions that handle 32 bytes at once. Found on most x86 CPUs since
+about 2013-2015.</li>
+<li><strong>AVX-512</strong> - CPU instructions that handle 64 bytes at
+once. Found on AMD Zen 4 and newer and on some Intel CPUs. Gives the
+highest cache bandwidth figures.</li>
+<li><strong>Bandwidth</strong> - how much data moves per second. Like
+the number of lanes on a road. Higher is better.</li>
+<li><strong>Best-of trials</strong> - LSA repeats each measurement many
+times and keeps the fastest. Interruptions only ever make a trial
+slower, so the fastest one is the truest.</li>
+<li><strong>BIOS / UEFI</strong> - the firmware that starts the PC and
+holds settings such as memory speed.</li>
+<li><strong>Bytes per clock</strong> - how many bytes a core moves in
+one tick of its clock. A way to compare results at different clock
+speeds.</li>
+<li><strong>Cache</strong> - small, very fast memory inside the CPU that
+keeps copies of recently used data, so the CPU does not have to wait for
+RAM.</li>
+<li><strong>Cache line</strong> - the unit a cache works in: 64 bytes on
+current x86 CPUs. Reading one byte brings the whole 64-byte line
+in.</li>
+<li><strong>CCD / core complex</strong> - on AMD Ryzen, a chip (die)
+holding up to 8 cores and their L3 cache.</li>
+<li><strong>Chipset</strong> - the motherboard's support chip(s) that
+provide extra USB, SATA and PCIe connections.</li>
+<li><strong>CLZERO</strong> - an AMD instruction that writes a whole
+64-byte line of zeros to memory without first reading it. LSA uses it to
+measure Memory Write on AMD CPUs.</li>
+<li><strong>Code path</strong> - which version of LSA's test loops is
+used: AVX-512, AVX2 or SSE2.</li>
+<li><strong>Copy</strong> - reading data from one place and writing it
+to another. LSA counts both the bytes read and the bytes written.</li>
+<li><strong>DDR4 / DDR5</strong> - the two current generations of
+desktop memory. DDR5 is faster in bandwidth; latency is similar.</li>
+<li><strong>DIMM</strong> - one memory stick.</li>
+<li><strong>DMI / SMBIOS</strong> - tables in the firmware that describe
+the PC (board, BIOS, memory sticks). Reading the memory part needs root
+on Linux.</li>
+<li><strong>dmidecode</strong> - the Linux tool that reads DMI / SMBIOS
+tables. srs-root runs it and saves the output so LSA can read it without
+root.</li>
+<li><strong>DRAM</strong> - "dynamic RAM", the kind of memory on your
+memory sticks.</li>
+<li><strong>DRAM:FSB ratio</strong> - memory clock divided by the
+reference clock (FSB). DDR5-6000 runs its memory clock at 3000 MHz, so
+with a 100 MHz FSB the ratio is 30:1 (28.6:1 at 105 MHz).</li>
+<li><strong>Dual channel</strong> - two independent paths between the
+CPU and memory. Twice the bandwidth of one. Usually means one stick in
+each of two channels.</li>
+<li><strong>eCLK</strong> - on ASUS AM5 boards, the BIOS setting for the
+CPU's reference clock. Raising it from 100 MHz raises the CPU clock with
+it; LSA shows it as CPU FSB.</li>
+<li><strong>EXPO / XMP</strong> - memory profiles stored on the sticks
+(EXPO by AMD, XMP by Intel). Turning one on in the BIOS runs the memory
+at its rated speed instead of a slow default.</li>
+<li><strong>Fabric / Infinity Fabric</strong> - the internal link on AMD
+CPUs that joins the cores to the memory controller and the rest of the
+chip.</li>
+<li><strong>FCLK</strong> - the Infinity Fabric clock on AMD CPUs.
+Higher FCLK usually lowers memory latency.</li>
+<li><strong>FSB</strong> - "front side bus". In older PCs the bus
+between CPU and chipset; today used as the name for the reference clock
+(normally 100 MHz) that the CPU multiplier is applied to. LSA measures
+it on Linux from the TSC and the CPU's nominal frequency.</li>
+<li><strong>GB/s</strong> - gigabytes per second. 1 GB/s = 1,000 MB/s in
+LSA.</li>
+<li><strong>GiB/s, MiB/s</strong> - binary units: 1 MiB = 1,048,576
+bytes. Shown with <code>--mib</code>.</li>
+<li><strong>Huge pages / transparent huge pages (THP)</strong> - memory
+pages of 2 MB instead of 4 KB. Fewer pages means fewer address
+translations, so memory latency measures the memory, not the
+translation.</li>
+<li><strong>L1 cache</strong> - the first, smallest and fastest cache,
+inside each core (32-48 KB for data on current CPUs). Latency about 1
+ns.</li>
+<li><strong>L2 cache</strong> - second level, per core, about 0.5-2 MB.
+Latency about 3-4 ns.</li>
+<li><strong>L3 cache</strong> - third level, shared by many cores,
+16-128 MB. Latency about 10-12 ns. "X3D" AMD CPUs have an extra-large
+stacked L3 (96 MB on a 7800X3D).</li>
+<li><strong>Latency</strong> - the waiting time for one piece of data.
+Lower is better.</li>
+<li><strong>Lock pages in memory</strong> - a Windows user right needed
+for large pages. Without it LSA's Windows build measures memory latency
+on 4 KB pages, which reads higher.</li>
+<li><strong>Logical CPU / thread</strong> - what the operating system
+sees as a CPU. With SMT, each core shows as two logical CPUs.</li>
+<li><strong>MB/s</strong> - megabytes per second. In LSA 1 MB =
+1,000,000 bytes.</li>
+<li><strong>Memory controller</strong> - the part of the CPU that talks
+to the memory sticks.</li>
+<li><strong>MT/s</strong> - mega-transfers per second, the speed rating
+of memory (DDR5-6000 = 6000 MT/s). The actual memory clock is half of
+it.</li>
+<li><strong>Multiplier</strong> - CPU clock divided by the reference
+clock (e.g. 46.16 x 105 MHz = 4847 MHz).</li>
+<li><strong>Nominal frequency (CPPC)</strong> - the CPU's rated base
+clock as the firmware reports it through ACPI CPPC
+(<code>/sys/devices/system/cpu/cpu0/acpi_cppc/nominal_freq</code>),
+counted at a 100 MHz reference.</li>
+<li><strong>ns (nanosecond)</strong> - one billionth of a second.</li>
+<li><strong>North Bridge clock</strong> - on old PCs the chipset's
+clock; on current AMD CPUs the Infinity Fabric clock (FCLK). LSA reads
+it from the ryzen_smu PM table on Ryzen 7000 desktop CPUs.</li>
+<li><strong>Page / page walk</strong> - memory is managed in pages (4 KB
+normally). Finding where a page really is takes a "page walk", which
+costs time if it is not cached.</li>
+<li><strong>Pinned thread</strong> - a thread that is not allowed to
+move to another CPU. Keeps measurements steady.</li>
+<li><strong>PM table</strong> - a block of live values (clocks,
+voltages, power) that the AMD SMU publishes. The <code>ryzen_smu</code>
+driver makes it readable at
+<code>/sys/kernel/ryzen_smu_drv/pm_table</code>. Its layout changes
+between CPU generations, so LSA only reads the layout it knows (version
+<code>0x540104</code>).</li>
+<li><strong>Pointer chase</strong> - a chain where each value read is
+the address of the next read. The CPU cannot guess ahead, so each step
+shows the full latency.</li>
+<li><strong>Prefetch</strong> - the CPU fetching data before it is asked
+for, because it guessed the pattern. Good for programs, bad for latency
+tests, so LSA uses a random chain.</li>
+<li><strong>RAM</strong> - the main memory of the PC.</li>
+<li><strong>Read</strong> - the CPU fetching data from a cache or
+memory.</li>
+<li><strong>ryzen_smu</strong> - an optional Linux kernel driver that
+gives read access to the AMD SMU's PM table.</li>
+<li><strong>SMT</strong> - "simultaneous multithreading" (Intel calls it
+Hyper-Threading). One core runs two threads.</li>
+<li><strong>SMU</strong> - AMD's "System Management Unit", a small
+processor inside the CPU that controls clocks and power. LSA never sends
+it commands; it only reads the PM table through ryzen_smu.</li>
+<li><strong>srs-root</strong> - the root helper from the sister project
+srs-sysinfo. Run once, it saves root-only hardware data (including
+memory details) into <code>~/.cache/srs/root</code>.</li>
+<li><strong>SSE2</strong> - CPU instructions that handle 16 bytes at
+once. Every 64-bit x86 CPU has them.</li>
+<li><strong>Stepping</strong> - the revision number of a CPU
+design.</li>
+<li><strong>Streaming store</strong> - a write that goes straight to
+memory without being kept in the cache. Used for big copies so the cache
+is not filled with data that will not be read again.</li>
+<li><strong>TLB</strong> - "translation lookaside buffer", a small cache
+of recent address translations. A TLB miss means a page walk.</li>
+<li><strong>TSC</strong> - "time stamp counter", a CPU counter that
+ticks at a fixed rate (the nominal clock) on current CPUs
+(<code>constant_tsc</code>). LSA times it to measure the FSB.</li>
+<li><strong>UCLK</strong> - on AMD CPUs, the memory controller clock.
+"1:1" means it runs at the memory clock; "1:2" means half. 1:1 gives
+lower latency when the memory can be run that way.</li>
+<li><strong>Write</strong> - the CPU sending data to a cache or
+memory.</li>
+<li><strong>X3D</strong> - AMD CPUs with an extra cache chip stacked on
+top ("3D V-Cache"), giving a very large L3.</li>
+</ul>
+
+</section>
+</body></html>

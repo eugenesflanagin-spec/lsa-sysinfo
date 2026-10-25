@@ -1,6 +1,6 @@
 # Linux System Audit - User Guide
 
-Version 0.1.3. Covers Linux (Arch package, AUR, generic tarball, source build) and the Windows build.
+Version 0.2.0. Covers Linux (Arch package, AUR, generic tarball, source build) and the Windows build.
 
 > **About the name and credit.** Linux System Audit (LSA, package `lsa-sysinfo`) is a clean-room
 > Linux implementation of AIDA64 Business features. **AIDA64 is made by FinalWire Ltd.**
@@ -12,6 +12,7 @@ Version 0.1.3. Covers Linux (Arch package, AUR, generic tarball, source build) a
 
 Other pages:
 
+- [RESULTS.md](RESULTS.md) - one short section for every value LSA shows (each cell and line).
 - [CLI-REFERENCE.md](CLI-REFERENCE.md) - every command and option, with examples.
 - [GLOSSARY.md](GLOSSARY.md) - every technical word used here, in plain English.
 
@@ -99,7 +100,7 @@ makepkg -si
 Each GitHub release has `lsa-sysinfo-<version>-1-x86_64.pkg.tar.zst`. Install it with:
 
 ```
-sudo pacman -U lsa-sysinfo-0.1.3-1-x86_64.pkg.tar.zst
+sudo pacman -U lsa-sysinfo-0.2.0-1-x86_64.pkg.tar.zst
 ```
 
 ### 3.3 Any other distribution - generic tarball
@@ -109,8 +110,8 @@ distribution (Ubuntu 22.04), so it runs on most current ones (glibc 2.34 or newe
 The fast AVX2 / AVX-512 code is picked at run time, only if your CPU has it.
 
 ```
-tar xzf lsa-sysinfo-0.1.3-linux-x86_64.tar.gz
-cd lsa-sysinfo-0.1.3-linux-x86_64
+tar xzf lsa-sysinfo-0.2.0-linux-x86_64.tar.gz
+cd lsa-sysinfo-0.2.0-linux-x86_64
 ./usr/bin/lsa --version          # try it without installing
 ./usr/bin/lsa-gui
 sudo cp -r usr/bin usr/share /usr/local/     # install for all users
@@ -206,11 +207,11 @@ and refreshed after each run (the clock is measured again).
 | **CPU Type** | Core count as a word plus the model, e.g. `OctalCore AMD Ryzen 7 7800X3D`. | `/proc/cpuinfo` |
 | **CPU Stepping** | Code name, stepping and family/model, e.g. `Raphael, stepping 2 (family 19h model 61h)`. | `/proc/cpuinfo` plus a built-in code-name table |
 | **CPU Clock** | The core clock LSA **measured** a moment ago, e.g. `4968.7 MHz`. It moves a little run to run, because modern CPUs change clock all the time. | A short timing loop |
-| **CPU FSB** | The reference (base) clock. LSA shows `100.0 MHz`, the standard value on current desktop CPUs. It is not read from the hardware. | Fixed value |
-| **CPU Multiplier** | CPU Clock divided by 100, e.g. `49.69x`. | Calculated |
-| **North Bridge Clock** | Shown as `n/a (needs SMU access - not read)`. LSA does not talk to the CPU's management firmware. | - |
+| **CPU FSB** | The reference (base) clock, **measured**, e.g. `105.0 MHz` on a board set to eCLK 105. Shows `100.0 MHz (nominal)` when it cannot be measured. | TSC rate x 100 / CPPC `nominal_freq` |
+| **CPU Multiplier** | CPU Clock divided by CPU FSB, e.g. `46.16x`. | Calculated |
+| **North Bridge Clock** | On AMD Ryzen 7000 desktop CPUs: the Infinity Fabric clock (FCLK), e.g. `2133.0 MHz`. Otherwise `n/a (...)` with the reason. | `ryzen_smu` driver's PM table (optional) |
 | **Memory Bus** | The real memory clock, half the "MT/s" figure, e.g. `3000.0 MHz` for DDR5-6000. | srs-root DMI cache (optional) |
-| **DRAM:FSB Ratio** | Memory clock divided by the 100 MHz reference, e.g. `DRAM:FSB 30:1`. | Calculated |
+| **DRAM:FSB Ratio** | Memory clock divided by CPU FSB, e.g. `DRAM:FSB 30:1`, or `28.6:1` with a 105 MHz FSB. | Calculated |
 | **Memory Type** | Channels, type, speed and DIMM count, e.g. `Dual Channel DDR5-6000 SDRAM (2 DIMMs)`. | srs-root DMI cache (optional) |
 | **Chipset** | The motherboard chipset and CPU platform, e.g. `AMD X870, AMD Raphael/Granite Ridge`. | PCI devices + hwdata `pci.ids` |
 | **Motherboard** | Maker and board name. | `/sys/class/dmi/id/board_*` |
@@ -223,10 +224,25 @@ and refreshed after each run (the clock is measured again).
   After: `Finished - AVX-512 code path, 16 threads` (or `Stopped ...`). After saving: `Saved (PNG + TXT)`.
 - **Save** - greyed out until a run finishes. Saves a picture and a text file
   ([section 8](#8-saving-results-and-the-run-history)).
+- **Guide** - opens this user guide.
 - **Start Benchmark / Stop** - starts a run (after asking), or stops the current one.
 - **Close** - closes the window (and stops a run that is going).
 
 The small grey note under the status line is the credit and non-affiliation statement.
+
+### 5.4 Help for each value
+
+Every cell and every system line has its own short section in the guide
+([RESULTS.md](RESULTS.md)):
+
+- **Right-click** a value and choose **Open guide: ...**, or
+- point at it and press **F1**. (F1 anywhere else opens the guide at the start.)
+- Hover over a value for a tooltip with its name.
+
+The guide opens in your PDF viewer at that section if the viewer can jump to it (Okular, Evince,
+Papers); otherwise the HTML version opens in your web browser. On the command line,
+`lsa guide mem-latency` does the same; `lsa guide --list` lists the item names.
+The menu also has **LSA User Guide (PDF)**.
 
 ## 6. What each number means
 
@@ -471,8 +487,10 @@ L2 Write 1014-1240 GB/s across runs).
 - **Other CPUs are less tested.** The matching work was done on one AMD Zen 4 X3D system. Intel
   CPUs and other AMD generations work, but their numbers have not been compared side by side.
 - **Memory Write on non-AMD CPUs** uses streaming stores, so it may read lower than AIDA64 on those.
-- **North Bridge Clock** is never read (it would need direct access to the CPU's management
-  firmware). **CPU FSB** is a fixed 100 MHz.
+- **North Bridge Clock** is read only on AMD Ryzen 7000 desktop CPUs (PM table version
+  `0x540104`) with the `ryzen_smu` driver loaded; elsewhere it shows `n/a` and the reason.
+  **CPU FSB** is measured on Linux when the CPU has an invariant TSC and ACPI CPPC; otherwise,
+  and always on Windows, it shows `100.0 MHz (nominal)`.
 - **Memory type and speed need the srs-root cache** (see [3.5](#35-optional-memory-details-from-srs-sysinfo)).
 - **Windows latency** is higher than Linux latency unless Windows grants large pages
   (see [section 11](#11-windows-build)).
@@ -498,6 +516,8 @@ Both contain:
 
 - `lsa-gui.exe` - the Cache & Memory window (native Win32, no runtime needed).
 - `lsa.exe` - the command line, same options as Linux (`lsa cachemem ...`).
+- `LSA-User-Guide.html` - this guide (the installer adds a Start-menu shortcut to it). The
+  **Guide** button and F1 in the window open it.
 
 Windows SmartScreen may warn about an unknown publisher, because the files are not code-signed.
 
@@ -506,6 +526,7 @@ Windows SmartScreen may warn about an unknown publisher, because the files are n
 - **Save** writes a **BMP** picture plus a TXT file (Linux: PNG + TXT).
 - The run history is `%LOCALAPPDATA%\LSA\cachemem-history.txt`.
 - Memory details come from SMBIOS directly (no admin and no srs-root needed).
+- CPU FSB shows `100.0 MHz (nominal)` and North Bridge Clock `n/a`: neither is read on Windows.
 - **Latency and large pages:** the memory latency test uses 2 MB large pages only if your Windows
   account has the **"Lock pages in memory"** right. Without it LSA falls back to 4 KB pages, which
   adds address-translation time, so Memory Latency reads higher. The status line says which was used.
@@ -529,7 +550,10 @@ LSA has **no settings file**. Everything is chosen per run (window: defaults; co
 | your chosen `.png` + `.txt` | Saved results | Save button |
 | `/usr/bin/lsa`, `/usr/bin/lsa-gui` | The programs | package |
 | `/usr/share/applications/lsa-cachemem.desktop` | Menu entry | package |
-| `/usr/share/doc/lsa-sysinfo/` | README, CHANGELOG, EVIDENCE, CHECKLIST | package |
+| `/usr/share/applications/lsa-user-guide.desktop` | Menu entry "LSA User Guide (PDF)" | package |
+| `/usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf`, `html/LSA-User-Guide.html` | This guide (PDF and HTML) | package |
+| `/usr/share/doc/lsa-sysinfo/` | README, CHANGELOG, EVIDENCE, CHECKLIST, the guide's Markdown files | package |
+| `/sys/kernel/ryzen_smu_drv/pm_table` | North Bridge Clock (read only, optional) | `ryzen_smu` driver |
 
 `lsa-gui` with arguments behaves as the command line (`lsa-gui cachemem ...` = `lsa cachemem ...`).
 `lsa-gui --gui-start` opens the window and starts a run straight away (it still asks first).
@@ -584,8 +608,8 @@ Reads have to come all the way back to the cores through the fabric, writes of z
 No. Only the optional memory details come from a root-made cache (srs-root).
 
 **Can I run it from a script?**
-Yes: `lsa cachemem` prints plain text. Note that the command line **starts at once without asking**.
-See [CLI-REFERENCE.md](CLI-REFERENCE.md).
+Yes: `lsa cachemem` prints plain text. It asks before it starts; add `--yes` in scripts
+(without a terminal and without `--yes` it does not start). See [CLI-REFERENCE.md](CLI-REFERENCE.md).
 
 **Why does the window say OctalCore?**
 That is the core count written as a word (8 cores = Octal), as in the classic report style.

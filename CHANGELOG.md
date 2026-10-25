@@ -3,6 +3,40 @@
 Linux System Audit is a clean-room Linux implementation of AIDA64 Business features.
 AIDA64 is by FinalWire Ltd. (https://www.aida64.com); Linux System Audit is not affiliated with FinalWire.
 
+## 0.2.0 - 2026-10-25
+
+### Added
+- **CPU FSB is measured** on Linux: TSC rate x 100 / the CPU's nominal frequency (ACPI CPPC
+  `nominal_freq`), when the TSC is invariant (`constant_tsc`). A board running its reference clock
+  at 105 MHz (ASUS "eCLK 105") now shows `105.0 MHz` instead of a fixed 100. CPU Multiplier and
+  DRAM:FSB Ratio use the measured value; a ratio that is not whole is shown with one decimal
+  (`DRAM:FSB 28.6:1`). Without an invariant TSC or CPPC the line shows `100.0 MHz (nominal)`;
+  Windows always shows the nominal value.
+- **North Bridge Clock** on AMD Ryzen 7000 desktop CPUs: the Infinity Fabric clock (FCLK), read
+  from the `ryzen_smu` driver's PM table (read-only; table version `0x540104` only). Example:
+  `2133.0 MHz`. Without the driver, or with another table layout, the line says why it is `n/a`.
+- **User guide**: PDF + HTML (`/usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf`,
+  `html/LSA-User-Guide.html`), built from `docs/` (user guide, a new result-by-result reference,
+  command-line reference, glossary). Menu entry **LSA User Guide (PDF)**.
+  - Window: **Guide** button; **F1** opens the section of the value under the pointer;
+    **right-click** any cell or system line -> *Open guide*. Each value has a tooltip.
+  - `lsa guide [ITEM] [--print]` and `lsa guide --list` on the command line.
+  - `make guide` rebuilds it (pandoc + WeasyPrint); `make check-guide` fails if a result has no
+    guide section.
+  - Windows: `LSA-User-Guide.html` is in the installer (with a Start-menu shortcut) and the
+    portable zip; the window's Guide button and F1 open it.
+
+### Changed
+- `lsa cachemem` **asks before it starts**, like the window (`Start now? [y/N]`). `--yes` / `-y`
+  starts at once; without a terminal and without `--yes` it does not start (exit code 2).
+  `LSA_TEST_NOCONFIRM` still skips the question.
+
+### Fixed
+- `lsa cachemem --help` exits with code 0 (was 2).
+- Unknown `--isa`, `--only`, `--tests` and `--mem-write` values stop with an error listing the
+  valid values; before, `--isa` fell back to SSE2 and unknown list words were ignored.
+- `--mib` showed cache figures as MiB/s / 1000 labelled GiB/s; it now divides by 1024.
+
 ## 0.1.3 - 2026-10-16
 
 ### Fixed

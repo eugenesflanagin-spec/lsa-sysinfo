@@ -2,7 +2,7 @@
 ; Clean-room implementation of AIDA64 Business features. AIDA64 is by FinalWire Ltd.; not affiliated.
 Unicode true
 !ifndef VERSION
-  !define VERSION "0.1.3"
+  !define VERSION "0.2.0"
 !endif
 !ifndef DIST
   !define DIST "dist/win"
@@ -27,7 +27,7 @@ VIAddVersionKey "LegalCopyright" "GPL-2.0-or-later"
 !include "MUI2.nsh"
 !define MUI_ICON "lsa.ico"
 !define MUI_UNICON "lsa.ico"
-!define MUI_WELCOMEPAGE_TEXT "This installs ${APPNAME} ${VERSION} for Windows: the Cache & Memory Benchmark (Read / Write / Copy / Latency of memory and L1-L3 caches).$\r$\n$\r$\n${APPNAME} is a clean-room implementation of AIDA64 Business features. AIDA64 is by FinalWire Ltd.; this project is not affiliated with FinalWire.$\r$\n$\r$\nNo administrator rights are needed."
+!define MUI_WELCOMEPAGE_TEXT "This installs ${APPNAME} ${VERSION} for Windows: the Cache & Memory Benchmark (Read / Write / Copy / Latency of memory and L1-L3 caches) and its user guide.$\r$\n$\r$\n${APPNAME} is a clean-room implementation of AIDA64 Business features. AIDA64 is by FinalWire Ltd.; this project is not affiliated with FinalWire.$\r$\n$\r$\nNo administrator rights are needed."
 !define MUI_FINISHPAGE_RUN "$INSTDIR\lsa-gui.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Start the Cache && Memory Benchmark"
 !insertmacro MUI_PAGE_WELCOME
@@ -48,10 +48,12 @@ Section "Linux System Audit (required)" SecMain
   File /oname=README.txt "README.md"
   File /oname=CHANGELOG.txt "CHANGELOG.md"
   File /oname=LICENSE.txt "LICENSE"
+  File "${DIST}/LSA-User-Guide.html"
   File "lsa.ico"
   WriteUninstaller "$INSTDIR\uninstall.exe"
   CreateDirectory "$SMPROGRAMS\${APPNAME}"
   CreateShortcut "$SMPROGRAMS\${APPNAME}\LSA Cache & Memory Benchmark.lnk" "$INSTDIR\lsa-gui.exe" "" "$INSTDIR\lsa.ico"
+  CreateShortcut "$SMPROGRAMS\${APPNAME}\LSA User Guide.lnk" "$INSTDIR\LSA-User-Guide.html"
   CreateShortcut "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk" "$INSTDIR\uninstall.exe"
   WriteRegStr HKCU "Software\LinuxSystemAudit" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${REGKEY}" "DisplayName" "${APPNAME} ${VERSION}"
@@ -75,10 +77,12 @@ Section "Uninstall"
   Delete "$INSTDIR\README.txt"
   Delete "$INSTDIR\CHANGELOG.txt"
   Delete "$INSTDIR\LICENSE.txt"
+  Delete "$INSTDIR\LSA-User-Guide.html"
   Delete "$INSTDIR\lsa.ico"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\${APPNAME}\LSA Cache & Memory Benchmark.lnk"
+  Delete "$SMPROGRAMS\${APPNAME}\LSA User Guide.lnk"
   Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
   RMDir "$SMPROGRAMS\${APPNAME}"
   Delete "$DESKTOP\LSA Cache & Memory Benchmark.lnk"

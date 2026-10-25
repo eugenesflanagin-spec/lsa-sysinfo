@@ -17,7 +17,8 @@ Native Linux (plain C, GTK3), GPL-2.0-or-later. Sister project of
 
 ## Status
 
-0.1.3: the first tool, **Cache & Memory Benchmark**, is complete. The rest of AIDA64's page tree,
+0.2.0: the first tool, **Cache & Memory Benchmark**, is complete, with a user guide
+([docs/](docs/USER-GUIDE.md), installed as PDF + HTML). The rest of AIDA64's page tree,
 benchmarks and tools are planned; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 items.
 
 Measured on the reference system (same machine, 3 runs of each):
@@ -46,19 +47,25 @@ every cell within ~3%, except L1 Read at ~2250-2330 GB/s against AIDA64's ~2445 
   use ordinary 4 KB pages (L1: half of L1d, L2: half of L2, L3: 8 x L2), memory uses 2 MB
   (transparent huge) pages over 8 x L3 (at least 256 MB, at most half of free RAM) so page walks
   and L3 hits do not dominate it.
-- Below the grid: CPU type / stepping, measured clock and multiplier, memory bus, DRAM:FSB ratio,
-  memory type, chipset, motherboard, BIOS. DIMM speed / type come from the root DMI cache written
-  by `srs-root` (srs-sysinfo), since dmidecode needs root.
+- Below the grid: CPU type / stepping, measured clock, FSB (reference clock, measured as
+  TSC x 100 / CPPC nominal frequency) and multiplier, North Bridge clock (AMD FCLK from the
+  `ryzen_smu` PM table, Zen 4 desktop), memory bus, DRAM:FSB ratio, memory type, chipset,
+  motherboard, BIOS. DIMM speed / type come from the root DMI cache written by `srs-root`
+  (srs-sysinfo), since dmidecode needs root.
+- **Guide** button / F1 / right-click a value: opens the user guide at that value's section
+  (`lsa guide ITEM` on the command line).
 - **Save** writes a PNG of the window plus a TXT; every finished run is appended to
   `~/.cache/lsa/cachemem-history.txt`.
 
 ```
 lsa cachemem [--threads N] [--seconds S] [--isa avx512|avx2|sse2] [--mem-mib M]
              [--only mem,l1,l2,l3] [--tests read,write,copy,latency] [--mib]
-             [--mem-write auto|clzero|stream]
+             [--mem-write auto|clzero|stream] [--yes]
+lsa guide [ITEM] [--print] | lsa guide --list
 ```
 
-The benchmark loads every CPU thread and the memory bus for about 20 seconds and asks first.
+The benchmark loads every CPU thread and the memory bus for about 20 seconds and asks first
+(`--yes` skips the question, e.g. in scripts).
 
 ## Windows
 
