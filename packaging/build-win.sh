@@ -79,7 +79,9 @@ for f in lsa.exe lsa-gui.exe LSA-User-Guide.html README.txt CHANGELOG.txt LICENS
   grep -q "$f" <<<"$setl" && echo "OK installer has $f" || fail "installer is missing $f"
 done
 # the guide in the zip must be the real HTML guide
-bsdtar -xOf "$ZIP" LSA-User-Guide.html | head -c 4096 | grep -qi '<html' && echo "OK zip guide is HTML" || fail "zip LSA-User-Guide.html is not HTML"
+bsdtar -xOf "$ZIP" LSA-User-Guide.html >/tmp/zip-guide.html
+grep -qi '<html' /tmp/zip-guide.html && cmp -s /tmp/zip-guide.html docs/html/LSA-User-Guide.html \
+  && echo "OK zip guide is the HTML guide ($(stat -c %s /tmp/zip-guide.html) bytes)" || fail "zip LSA-User-Guide.html is not the HTML guide"
 cat /out/contents.txt
 [ $FAILS -eq 0 ] || { echo "RESULT: FAIL ($FAILS)"; exit 1; }
 cp "$SETUP" "$ZIP" /out/pkg/

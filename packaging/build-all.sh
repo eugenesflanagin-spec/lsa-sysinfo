@@ -84,7 +84,7 @@ if [ -f "$OUT/ubuntu-24.04/pkg/lsa-sysinfo_$VER-1.ubuntu24.04_amd64.deb" ]; then
   fi
   rm -rf "$REL"; mkdir -p "$REL"
   for d in "${DISTROS[@]}"; do [ -d "$OUT/$d/pkg" ] && cp "$OUT/$d"/pkg/* "$REL/"; done
-  [ $WIN = 1 ] && [ -d "$OUT/windows/pkg" ] && cp "$OUT"/windows/pkg/* "$REL/"
+  if [ "${RESULT[windows]:-}" = OK ]; then cp "$OUT"/windows/pkg/* "$REL/"; fi
   cp "$OUT"/tarball/*.tar.gz "$REL/" 2>/dev/null || true
   tar xzOf "$TARBALL" "lsa-sysinfo-$VER/docs/LSA-User-Guide.pdf" >"$REL/LSA-User-Guide.pdf"
   (cd "$REL" && sha256sum -- * >SHA256SUMS)

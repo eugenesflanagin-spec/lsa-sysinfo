@@ -4,8 +4,9 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@
 
+# the Makefile reads CFLAGS only: pass the hardening CPPFLAGS (_FORTIFY_SOURCE) with them
 override_dh_auto_build:
-	$(MAKE) CC=gcc native
+	$(MAKE) CC=gcc CFLAGS="$(CPPFLAGS) $(CFLAGS)" native
 
 override_dh_auto_install:
 	$(MAKE) CC=gcc DESTDIR=$(CURDIR)/debian/lsa-sysinfo SYSPREFIX=/usr install-system

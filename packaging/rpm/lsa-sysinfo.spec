@@ -71,5 +71,5 @@ for f in %{buildroot}%{_datadir}/applications/*.desktop; do desktop-file-validat
 %{_mandir}/man1/lsa-gui.1*
 
 %changelog
-* Sun Oct 25 2026 Eugene Flanagin <eflanagin@pm.me> - 0.1.3-1
+* Fri Oct 16 2026 Eugene Flanagin <eflanagin@pm.me> - 0.1.3-1
 - Native package of upstream release 0.1.3
