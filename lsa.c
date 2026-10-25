@@ -57,9 +57,10 @@ static int confirm(void)
 
 static void progress(int lv, int te, int done, const cm_result *r, void *ud)
 {
-    (void)ud;
+    int mib = ud && *(const int *)ud;
     if (!done) { fprintf(stderr, "  %-8s %-7s ...\r", cm_level_name[lv], cm_test_name[te]); return; }
-    fprintf(stderr, "  %-8s %-7s %12.*f %s\n", cm_level_name[lv], cm_test_name[te], te == CM_LAT ? 1 : 0, r->v[lv][te], te == CM_LAT ? "ns" : "MB/s");
+    fprintf(stderr, "  %-8s %-7s %12.*f %s\n", cm_level_name[lv], cm_test_name[te], te == CM_LAT ? 1 : 0, r->v[lv][te],
+            te == CM_LAT ? "ns" : mib ? "MiB/s" : "MB/s");
 }
 
 static int cmd_cachemem(int argc, char **argv)
@@ -68,7 +69,7 @@ static int cmd_cachemem(int argc, char **argv)
     cm_result r;
     cm_info in;
     unsigned lvmask = 0, temask = 0;
-    int i, lv, te, rc, yes = 0;
+    int i, lv, te, rc, yes = 0, mib;
     cm_cfg_default(&c);
     for (i = 0; i < argc; i++) {
         static const char *const lvn[] = { "mem", "l1", "l2", "l3", NULL }, *const ten[] = { "read", "write", "copy", "latency", "lat", NULL };
@@ -108,7 +109,8 @@ static int cmd_cachemem(int argc, char **argv)
                 if ((lvmask >> lv & 1) && (temask >> te & 1)) c.run_mask |= 1u << (lv * CM_NTEST + te);
     }
     if (!yes && !confirm()) return 2;
-    rc = cm_run(&c, &r, progress, NULL, NULL);
+    mib = c.mb > 1e6;
+    rc = cm_run(&c, &r, progress, &mib, NULL);
     if (rc < 0) { fprintf(stderr, "cachemem: could not allocate the test memory\n"); return 1; }
     cm_get_info(&in, r.clock_mhz);
     printf("Linux System Audit %s - Cache & Memory Benchmark\n\n", LSA_VERSION);
@@ -119,7 +121,7 @@ static int cmd_cachemem(int argc, char **argv)
             char b[32];
             if (r.v[lv][te] <= 0) snprintf(b, sizeof b, "-");
             else if (te == CM_LAT) snprintf(b, sizeof b, "%.1f ns", r.v[lv][te]);
-            else cm_format_bw(b, sizeof b, lv, r.v[lv][te], c.mb > 1e6);
+            else cm_format_bw(b, sizeof b, lv, r.v[lv][te], mib);
             printf(" %*s", te == CM_LAT ? 12 : 14, b);
         }
         putchar('\n');

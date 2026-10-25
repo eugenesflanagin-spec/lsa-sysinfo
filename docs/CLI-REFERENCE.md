@@ -98,7 +98,7 @@ While it runs, one progress line per finished cell goes to **standard error**:
   L1 Cache Read      2292344 MB/s
 ```
 
-(progress lines always show MB/s and ns, without converting caches to GB/s).
+(progress lines always show MB/s - MiB/s with `--mib` - and ns, without converting caches to GB/s).
 
 At the end, the result goes to **standard output**:
 
