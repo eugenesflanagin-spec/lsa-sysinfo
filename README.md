@@ -1,18 +1,27 @@
 # Linux System Audit (lsa-sysinfo)
 
-> **Clean-room Linux implementation of AIDA64 Business features.**
+LSA is a clean-room Linux implementation of AIDA64 Business's Cache & Memory Benchmark, built to
+produce results 1:1 with the native Windows app. On the reference system (Ryzen 7 7800X3D,
+DDR5-6000, FCLK 2000) every cell - memory read / write / copy / latency and L1 / L2 / L3 - lands
+within about 3% of AIDA64 except L1 Read (~5% low; see [CHANGELOG.md](CHANGELOG.md)). AIDA64
+itself varies by a similar amount from run to run.
+
 > AIDA64 is made by **FinalWire Ltd.** (https://www.aida64.com). Linux System Audit is an
-> independent project and is **not affiliated with, endorsed by or connected to FinalWire**.
-> No AIDA64 code was disassembled, decompiled or copied, and its encrypted hardware database
-> and artwork are not used. See [EVIDENCE.md](EVIDENCE.md) for how the specification was made.
+> independent project and is **not affiliated with or endorsed by FinalWire**, and contains none
+> of its code or data. No AIDA64 code was disassembled, decompiled or copied, and its encrypted
+> hardware database and artwork are not used. See [EVIDENCE.md](EVIDENCE.md) for how the
+> specification was made.
 
 Native Linux (plain C, GTK3), GPL-2.0-or-later. Sister project of
 [srs-sysinfo](https://github.com/eugenesflanagin-spec/srs-sysinfo) (SIV64X for Linux).
 
 ## Status
 
-0.1.0: the first tool, **Cache & Memory Benchmark**. The rest of AIDA64's page tree, benchmarks
-and tools follow; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 planned items.
+0.1.3: the first tool, **Cache & Memory Benchmark**, is complete. The rest of AIDA64's page tree,
+benchmarks and tools are planned; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 items.
+
+Measured on the reference system (same machine, 3 runs of each):
+every cell within ~3%, except L1 Read at ~2250-2330 GB/s against AIDA64's ~2445 (~5% low).
 
 ## Cache & Memory Benchmark
 
@@ -35,7 +44,8 @@ and tools follow; [CHECKLIST.tsv](CHECKLIST.tsv) lists all 162 planned items.
   GB/s (1 MB = 1,000,000 bytes; `--mib` for binary units).
 - **Latency**: one thread, random pointer chase through every 64-byte line of a block. Caches
   use ordinary 4 KB pages (L1: half of L1d, L2: half of L2, L3: 8 x L2), memory uses 2 MB
-  (transparent huge) pages over 4 x L3 so page walks do not dominate it.
+  (transparent huge) pages over 8 x L3 (at least 256 MB, at most half of free RAM) so page walks
+  and L3 hits do not dominate it.
 - Below the grid: CPU type / stepping, measured clock and multiplier, memory bus, DRAM:FSB ratio,
   memory type, chipset, motherboard, BIOS. DIMM speed / type come from the root DMI cache written
   by `srs-root` (srs-sysinfo), since dmidecode needs root.
