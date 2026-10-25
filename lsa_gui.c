@@ -15,7 +15,8 @@
 #include <time.h>
 
 typedef struct {
-    GtkWidget *win, *cell[CM_NLEVEL][CM_NTEST], *info[16], *start, *save, *status;
+    GtkWidget *win, *cell[CM_NLEVEL][CM_NTEST], *info[16], *start, *save, *guide, *status;
+    const char *hover;   /* item under the pointer, for F1 */
     cm_result res;
     cm_info inf;
     int running, have;
@@ -209,6 +210,91 @@ static gboolean on_delete(GtkWidget *x, GdkEvent *e, gpointer data)
 
 static void on_close(GtkWidget *b, gpointer data) { (void)b; on_delete(NULL, NULL, data); }
 
+/* ---- user guide: Guide button, F1 (item under the pointer), right-click on a value */
+static void open_guide(cmwin *w, const char *id)
+{
+    char msg[8192];
+    int dry = getenv("LSA_GUIDE_DRY_RUN") != NULL, ok = lsa_guide_open(id, dry, msg, sizeof msg);
+    if (dry) { printf("guide %s: %s\n", id ? id : "(start)", msg); fflush(stdout); return; }
+    if (!ok || *msg) {
+        GtkWidget *m = gtk_message_dialog_new(GTK_WINDOW(w->win), GTK_DIALOG_MODAL, ok ? GTK_MESSAGE_INFO : GTK_MESSAGE_ERROR,
+                                              GTK_BUTTONS_CLOSE, "%s", *msg ? msg : "Could not open the user guide.");
+        gtk_window_set_title(GTK_WINDOW(m), "LSA User Guide");
+        gtk_dialog_run(GTK_DIALOG(m));
+        gtk_widget_destroy(m);
+    }
+}
+
+static void on_guide(GtkWidget *b, gpointer data) { (void)b; open_guide(data, NULL); }
+
+static void on_menu_guide(GtkMenuItem *mi, gpointer data)
+{
+    open_guide(data, g_object_get_data(G_OBJECT(mi), "item"));
+}
+
+static void on_menu_copy(GtkMenuItem *mi, gpointer data)
+{
+    (void)data;
+    gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD), gtk_entry_get_text(GTK_ENTRY(g_object_get_data(G_OBJECT(mi), "entry"))), -1);
+}
+
+static gboolean on_item_press(GtkWidget *e, GdkEventButton *ev, gpointer data)
+{
+    const char *id = g_object_get_data(G_OBJECT(e), "item");
+    GtkWidget *menu, *mi;
+    char lbl[128];
+    if (ev->type != GDK_BUTTON_PRESS || ev->button != 3 || !id) return FALSE;
+    menu = gtk_menu_new();
+    snprintf(lbl, sizeof lbl, "Open _guide: %s (F1)", lsa_guide_title(id));
+    mi = gtk_menu_item_new_with_mnemonic(lbl);
+    g_object_set_data(G_OBJECT(mi), "item", (gpointer)id);
+    g_signal_connect(mi, "activate", G_CALLBACK(on_menu_guide), data);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
+    mi = gtk_menu_item_new_with_mnemonic("_Copy value");
+    g_object_set_data(G_OBJECT(mi), "entry", e);
+    g_signal_connect(mi, "activate", G_CALLBACK(on_menu_copy), data);
+    gtk_widget_set_sensitive(mi, gtk_entry_get_text_length(GTK_ENTRY(e)) > 0);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), mi);
+    gtk_widget_show_all(menu);
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)ev);
+    return TRUE;
+}
+
+static gboolean on_item_enter(GtkWidget *e, GdkEventCrossing *ev, gpointer data)
+{
+    (void)ev;
+    ((cmwin *)data)->hover = g_object_get_data(G_OBJECT(e), "item");
+    return FALSE;
+}
+
+static gboolean on_item_leave(GtkWidget *e, GdkEventCrossing *ev, gpointer data)
+{
+    cmwin *w = data;
+    (void)ev;
+    if (w->hover == g_object_get_data(G_OBJECT(e), "item")) w->hover = NULL;
+    return FALSE;
+}
+
+static gboolean on_key(GtkWidget *x, GdkEventKey *ev, gpointer data)
+{
+    (void)x;
+    if (ev->keyval == GDK_KEY_F1) { open_guide(data, ((cmwin *)data)->hover); return TRUE; }
+    return FALSE;
+}
+
+/* a value with a guide section: tooltip, right-click menu, F1 while the pointer is on it */
+static void link_item(cmwin *w, GtkWidget *e, const char *id)
+{
+    char tip[160];
+    g_object_set_data(G_OBJECT(e), "item", (gpointer)id);
+    snprintf(tip, sizeof tip, "%s - right-click or F1: open the user guide at this value", lsa_guide_title(id));
+    gtk_widget_set_tooltip_text(e, tip);
+    gtk_widget_add_events(e, GDK_BUTTON_PRESS_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+    g_signal_connect(e, "button-press-event", G_CALLBACK(on_item_press), w);
+    g_signal_connect(e, "enter-notify-event", G_CALLBACK(on_item_enter), w);
+    g_signal_connect(e, "leave-notify-event", G_CALLBACK(on_item_leave), w);
+}
+
 static GtkWidget *ro_entry(int chars, int right)
 {
     GtkWidget *e = gtk_entry_new();
@@ -248,6 +334,7 @@ static void open_cachemem(void)
         for (te = 0; te < CM_NTEST; te++) {
             w->cell[lv][te] = ro_entry(te == CM_LAT ? 10 : 13, 1);
             gtk_widget_set_name(w->cell[lv][te], "cell");
+            link_item(w, w->cell[lv][te], lsa_cell_item(lv, te));
             gtk_grid_attach(GTK_GRID(g), w->cell[lv][te], te + 1, lv + 1, 1, 1);
         }
     }
@@ -261,6 +348,7 @@ static void open_cachemem(void)
         gtk_widget_set_halign(l, GTK_ALIGN_START);
         gtk_grid_attach(GTK_GRID(gi), l, 0, i, 1, 1);
         w->info[i] = ro_entry(58, 0);
+        link_item(w, w->info[i], lsa_info_item[i]);
         gtk_widget_set_hexpand(w->info[i], TRUE);
         gtk_grid_attach(GTK_GRID(gi), w->info[i], 1, i, 1, 1);
     }
@@ -281,14 +369,19 @@ static void open_cachemem(void)
     w->save = gtk_button_new_with_mnemonic("_Save");
     w->start = gtk_button_new_with_mnemonic("Start Benchmark");
     close = gtk_button_new_with_mnemonic("_Close");
+    w->guide = gtk_button_new_with_mnemonic("_Guide");
+    gtk_widget_set_tooltip_text(w->guide, "Open the user guide (F1: at the value under the pointer; right-click a value for its section)");
     gtk_widget_set_sensitive(w->save, FALSE);
     gtk_box_pack_start(GTK_BOX(bb), w->save, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(bb), w->guide, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(bb), close, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(bb), w->start, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vb), bb, FALSE, FALSE, 0);
     g_signal_connect(w->start, "clicked", G_CALLBACK(on_start), w);
     g_signal_connect(w->save, "clicked", G_CALLBACK(on_save), w);
     g_signal_connect(close, "clicked", G_CALLBACK(on_close), w);
+    g_signal_connect(w->guide, "clicked", G_CALLBACK(on_guide), w);
+    g_signal_connect(w->win, "key-press-event", G_CALLBACK(on_key), w);
     g_signal_connect(w->win, "delete-event", G_CALLBACK(on_delete), w);
 
     cm_get_info(&w->inf, cm_measure_mhz());
@@ -300,6 +393,7 @@ static void open_cachemem(void)
     }
     gtk_widget_show_all(w->win);
     if (getenv("LSA_AUTOSTART")) on_start(NULL, w);   /* test hook / --gui-start */
+    if (getenv("LSA_TEST_GUIDE")) open_guide(w, *getenv("LSA_TEST_GUIDE") ? getenv("LSA_TEST_GUIDE") : NULL);   /* test hook */
 }
 
 static void load_css(void)

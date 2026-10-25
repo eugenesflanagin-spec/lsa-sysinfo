@@ -414,9 +414,10 @@ int cm_isa_best(void)
 void cm_format_bw(char *b, unsigned long n, int level, double v, int mib)
 {
     if (v <= 0) { snprintf(b, n, "-"); return; }
-    if (level == CM_MEM || v < 1000) snprintf(b, n, "%.0f %s", v, mib ? "MiB/s" : "MB/s");
-    else if (v < 1e6) snprintf(b, n, "%.2f %s", v / 1000, mib ? "GiB/s" : "GB/s");
-    else snprintf(b, n, "%.1f %s", v / 1000, mib ? "GiB/s" : "GB/s");
+    double k = mib ? 1024.0 : 1000.0;   /* v is in MiB/s with mib, else MB/s */
+    if (level == CM_MEM || v < k) snprintf(b, n, "%.0f %s", v, mib ? "MiB/s" : "MB/s");
+    else if (v < k * 1000) snprintf(b, n, "%.2f %s", v / k, mib ? "GiB/s" : "GB/s");
+    else snprintf(b, n, "%.1f %s", v / k, mib ? "GiB/s" : "GB/s");
 }
 
 void cm_dram_ratio(char *b, unsigned long n, double mem_mhz, double fsb_mhz)

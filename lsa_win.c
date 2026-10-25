@@ -17,7 +17,7 @@
 #include "lsa.h"
 
 #define WM_CM (WM_APP + 1)
-enum { ID_START = 100, ID_SAVE, ID_CLOSE };
+enum { ID_START = 100, ID_SAVE, ID_CLOSE, ID_GUIDE };
 
 static HWND g_win, g_cell[CM_NLEVEL][CM_NTEST], g_info[12], g_start, g_save, g_status;
 static HFONT g_font, g_bold, g_mono;
@@ -239,9 +239,21 @@ static void build(void)
                   L"AIDA64 is by FinalWire Ltd.; not affiliated.", 0, 14, y + 22, 542, 32, 0, g_font);
     y += 62;
     g_save = mk(L"BUTTON", L"&Save", BS_PUSHBUTTON, 14, y, 90, 28, ID_SAVE, g_font);
+    mk(L"BUTTON", L"&Guide", BS_PUSHBUTTON, 110, y, 90, 28, ID_GUIDE, g_font);
     g_start = mk(L"BUTTON", L"Start Benchmark", BS_DEFPUSHBUTTON, 356, y, 120, 28, ID_START, g_font);
     mk(L"BUTTON", L"&Close", BS_PUSHBUTTON, 482, y, 74, 28, ID_CLOSE, g_font);
     EnableWindow(g_save, FALSE);
+}
+
+/* the HTML user guide beside the program (F1 / Guide button) */
+static void open_guide(void)
+{
+    char msg[1024];
+    if (!lsa_guide_open(NULL, 0, msg, sizeof msg)) {
+        wchar_t w[1024];
+        MultiByteToWideChar(CP_UTF8, 0, msg, -1, w, 1024);
+        MessageBoxW(g_win, w, L"LSA User Guide", MB_OK | MB_ICONWARNING);
+    }
 }
 
 static LRESULT CALLBACK wndproc(HWND h, UINT m, WPARAM wp, LPARAM lp)
@@ -251,6 +263,7 @@ static LRESULT CALLBACK wndproc(HWND h, UINT m, WPARAM wp, LPARAM lp)
         if (LOWORD(wp) == ID_START) on_start();
         else if (LOWORD(wp) == ID_SAVE) on_save();
         else if (LOWORD(wp) == ID_CLOSE) SendMessageW(h, WM_CLOSE, 0, 0);
+        else if (LOWORD(wp) == ID_GUIDE) open_guide();
         return 0;
     case WM_CM: { upd *u = (upd *)lp; on_update(u); free(u); return 0; }
     case WM_CTLCOLORSTATIC: {   /* read-only edits keep a white field like the classic layout */
@@ -310,6 +323,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE prev, PWSTR cmd, int show)
     UpdateWindow(g_win);
     if (getenv("LSA_AUTOSTART")) PostMessageW(g_win, WM_COMMAND, ID_START, 0);
     while (GetMessageW(&msg, NULL, 0, 0) > 0) {
+        if (msg.message == WM_KEYDOWN && msg.wParam == VK_F1) { open_guide(); continue; }
         if (IsDialogMessageW(g_win, &msg)) continue;
         TranslateMessage(&msg);
         DispatchMessageW(&msg);

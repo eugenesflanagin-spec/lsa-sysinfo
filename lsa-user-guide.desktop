@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LSA User Guide (PDF)
+Comment=User guide and result-by-result reference for the LSA Cache & Memory Benchmark
+Exec=xdg-open /usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf
+Icon=application-pdf
+Terminal=false
+Categories=System;Documentation;
+Keywords=lsa;guide;manual;help;cache;memory;benchmark;
