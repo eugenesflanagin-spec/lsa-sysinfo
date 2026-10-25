@@ -1,0 +1,76 @@
+name: A benchmark result looks wrong
+description: A Cache & Memory Benchmark cell or system line is far from AIDA64's, missing or strange on your PC.
+labels: [results]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        LSA aims for results 1:1 with AIDA64's Cache & Memory Benchmark, and every PC is a bit
+        different, so side-by-side results from more machines are the best way to get there.
+        Thank you!
+
+        Before you run it: close other heavy programs, and never run LSA at the same time as
+        another memory benchmark (for example AIDA64 under Wine) - both results will be wrong.
+
+        **Please paste the full result.** In a terminal:
+
+        ```sh
+        lsa cachemem --yes > lsa-result.txt
+        ```
+
+        (or take a screenshot of the window). The user guide section for each cell
+        (`lsa guide mem-latency`, F1 in the window) explains what is normal.
+  - type: input
+    id: version
+    attributes:
+      label: LSA version
+      description: Output of `lsa --version` (first line is enough).
+      placeholder: Linux System Audit (lsa) 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: item
+    attributes:
+      label: Which cell / line is off?
+      description: As LSA shows it.
+      placeholder: "e.g. L2 Cache Copy, Memory Latency, CPU FSB, North Bridge Clock"
+    validations:
+      required: true
+  - type: textarea
+    id: lsa
+    attributes:
+      label: LSA result
+      description: The full output of `lsa cachemem --yes` (or a screenshot of the window).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: AIDA64 result on the same PC
+      description: |
+        AIDA64's Cache & Memory Benchmark on the same machine and settings (Windows on the same
+        PC, or a screenshot). Say which AIDA64 version, and Windows or Wine.
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: CPU, motherboard and memory (kit, speed, timings, EXPO/XMP on or off).
+      placeholder: "e.g. Ryzen 7 7800X3D, ASUS TUF X870-PRO, 2x16 GB DDR5-6000 CL30, EXPO on"
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution and kernel
+      description: Your distro and the output of `uname -r` (or the Windows version).
+      placeholder: "e.g. Ubuntu 24.04, 6.8.0-45-generic"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: CPU governor / power profile, other programs running, BIOS settings you changed.

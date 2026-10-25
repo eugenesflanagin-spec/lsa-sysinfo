@@ -1,0 +1,34 @@
+# Maintainer: Eugene Flanagin <eflanagin@pm.me>
+#
+# CI copy of the AUR PKGBUILD (aur.archlinux.org/packages/lsa-sysinfo). The only
+# differences: the source is the local `git archive` tarball instead of the
+# GitHub tag download, and packaging/build-arch.sh writes pkgver and the
+# checksum at build time. Keep the rest in step with the AUR file.
+#
+# Linux System Audit is a clean-room Linux implementation of AIDA64 Business features.
+# AIDA64 is the work of FinalWire Ltd. (https://www.aida64.com); Linux System Audit contains no
+# AIDA64 code, binaries or data files and is not affiliated with or endorsed by FinalWire.
+
+pkgname=lsa-sysinfo
+pkgver=0.2.0   # set by build-arch.sh
+pkgrel=1
+pkgdesc="Linux System Audit: clean-room Linux implementation of AIDA64 Business features (AIDA64 by FinalWire Ltd.) - Cache & Memory Benchmark"
+arch=('x86_64')
+url="https://github.com/eugenesflanagin-spec/lsa-sysinfo"
+license=('GPL-2.0-or-later')
+depends=('gtk3' 'glib2' 'glibc' 'cairo' 'hicolor-icon-theme' 'hwdata')
+optdepends=('srs-sysinfo: srs-root DMI cache for memory speed / type details'
+            'ryzen_smu-dkms-git: North Bridge Clock (FCLK) on Ryzen 7000 desktop CPUs'
+            'xdg-utils: open the user guide from the Guide button / F1 / lsa guide')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')   # set by build-arch.sh
+
+build() {
+  cd "$pkgname-$pkgver"
+  make CC=gcc native
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  make CC=gcc DESTDIR="$pkgdir" SYSPREFIX=/usr install-system
+}

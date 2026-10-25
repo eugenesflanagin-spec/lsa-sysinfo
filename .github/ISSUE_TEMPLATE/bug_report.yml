@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in LSA crashes, hangs or doesn't work as described in the user guide.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. If a **benchmark result or system line looks
+        wrong** for your hardware (a cell far from AIDA64's, wrong CPU FSB, missing North Bridge
+        Clock...), please use the **"A benchmark result looks wrong"** template instead.
+  - type: input
+    id: version
+    attributes:
+      label: LSA version
+      description: Output of `lsa --version` (first line is enough), or the version in the Windows window title.
+      placeholder: Linux System Audit (lsa) 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: System and how you installed LSA
+      placeholder: "e.g. Fedora 44, the .rpm from the release page / Arch, AUR package / Windows 11, setup.exe"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open lsa-gui
+        2. Click ...
+        3. ...
+  - type: textarea
+    id: output
+    attributes:
+      label: Error messages or terminal output
+      description: |
+        Start `lsa-gui` from a terminal and paste anything it prints, or the full output of the
+        `lsa` command that went wrong.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: I checked that this still happens with the latest release.
+        - label: I removed anything private from the text above.

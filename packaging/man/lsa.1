@@ -1,0 +1,63 @@
+.TH LSA 1 "October 2026" "lsa-sysinfo 0.2.0" "User Commands"
+.SH NAME
+lsa \- Linux System Audit cache and memory benchmark (command line)
+.SH SYNOPSIS
+.B lsa cachemem
+[\fB\-\-threads\fR \fIN\fR] [\fB\-\-seconds\fR \fIS\fR] [\fB\-\-isa\fR avx512|avx2|sse2] [\fB\-\-mem\-mib\fR \fIM\fR]
+[\fB\-\-only\fR mem|l1|l2|l3[,..]] [\fB\-\-tests\fR read,write,copy,latency] [\fB\-\-mib\fR]
+[\fB\-\-mem\-write\fR auto|clzero|stream] [\fB\-\-yes\fR]
+.br
+.B lsa guide
+[\fIITEM\fR] [\fB\-\-print\fR]
+.br
+.B lsa guide \-\-list
+.br
+.B lsa \-\-version
+|
+.B \-\-help
+.SH DESCRIPTION
+Linux System Audit is a clean-room Linux implementation of AIDA64 Business
+features (AIDA64 is by FinalWire Ltd.; not affiliated).
+.B lsa cachemem
+measures read, write and copy bandwidth (MB/s) and latency (ns) of memory and
+the L1, L2 and L3 caches. It uses every CPU thread and the memory bus for about
+20 seconds, so it asks before it starts.
+.SH OPTIONS
+.TP
+.BR \-\-yes ", " \-y
+Start without asking (for scripts). Without a terminal and without
+.B \-\-yes
+the benchmark does not start and
+.B lsa
+exits with code 2.
+.TP
+.B \-\-mib
+Show the results in MiB/s and GiB/s (1024-based) instead of MB/s and GB/s.
+.TP
+.BR \-\-isa ", " \-\-only ", " \-\-tests ", " \-\-mem\-write
+Choose the code path, the levels, the tests and the memory write method. An
+unknown value stops with a message listing the valid ones (exit code 2).
+.PP
+Run
+.B lsa \-\-help
+for the meaning of each option.
+.SH GUIDE
+.B lsa guide
+\fIITEM\fR opens the user guide at the section for one result or system line,
+for example
+.B lsa guide mem-latency
+or
+.BR "lsa guide cpu-fsb" .
+.B \-\-list
+lists the items,
+.B \-\-print
+shows the command that would be run instead of running it. The guide is
+installed as /usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf and
+/usr/share/doc/lsa-sysinfo/html/LSA-User-Guide.html.
+.SH EXIT STATUS
+0 on success, 1 when the test memory cannot be allocated or the guide cannot
+be opened, 2 for a usage error or when the benchmark was not started.
+.SH SEE ALSO
+.BR lsa-gui (1)
+.SH HOMEPAGE
+https://github.com/eugenesflanagin-spec/lsa-sysinfo

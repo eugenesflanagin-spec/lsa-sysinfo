@@ -1,0 +1,31 @@
+Source: lsa-sysinfo
+Section: utils
+Priority: optional
+Maintainer: Eugene Flanagin <eflanagin@pm.me>
+Build-Depends: debhelper-compat (= 13), libgtk-3-dev, pkgconf
+Standards-Version: 4.7.2
+Homepage: https://github.com/eugenesflanagin-spec/lsa-sysinfo
+Vcs-Git: https://github.com/eugenesflanagin-spec/lsa-sysinfo.git
+Vcs-Browser: https://github.com/eugenesflanagin-spec/lsa-sysinfo
+Rules-Requires-Root: no
+
+Package: lsa-sysinfo
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, hwdata, hicolor-icon-theme, xdg-utils
+Suggests: srs-sysinfo
+Description: Linux System Audit - cache and memory benchmark
+ Linux System Audit is a clean-room Linux implementation of AIDA64 Business
+ features. AIDA64 is the work of FinalWire Ltd.; Linux System Audit contains
+ no AIDA64 code, binaries or data files and is not affiliated with or
+ endorsed by FinalWire.
+ .
+ This release provides the Cache & Memory Benchmark: read, write, copy
+ (MB/s) and latency (ns) of memory and the L1, L2 and L3 caches, using every
+ CPU thread, as a GTK 3 window (lsa-gui) and on the command line (lsa).
+ With srs-sysinfo installed, its root data cache adds memory speed and type
+ details. The North Bridge Clock (FCLK) line needs the optional ryzen_smu
+ kernel driver (not packaged in the distribution) on Ryzen 7000 desktop CPUs.
+ .
+ A user guide (PDF and HTML, in /usr/share/doc/lsa-sysinfo) explains every
+ result and system line; F1, the Guide button or "lsa guide ITEM" opens it at
+ that item's section.

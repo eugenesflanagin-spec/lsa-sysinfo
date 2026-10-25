@@ -1,0 +1,39 @@
+Linux System Audit (lsa-sysinfo) @VERSION@ - generic Linux x86_64 build
+@UNDERLINE@
+
+What this is: the same programs and files as @BUILT_FROM@, unpacked into a
+plain directory so they can be used on other distributions. Built for plain
+x86-64; the AVX2 / AVX-512 benchmark code is used only if the CPU has it.
+
+Needs glibc @GLIBC@ or newer (check with: ldd --version). Older systems: use the
+.deb/.rpm for your distribution from the release page instead.
+
+Files (laid out like /usr):
+  usr/bin/lsa-gui    GTK 3 window: the Cache & Memory Benchmark
+  usr/bin/lsa        command line (lsa cachemem, lsa guide ITEM)
+  usr/share/...      menu entries, icon, docs and the user guide (PDF + HTML)
+
+Needed at run time
+  - glibc @GLIBC@+, GTK 3 (libgtk-3-0 / gtk3), GLib, Cairo
+  - hwdata (chipset names, read from /usr/share/hwdata)
+  - optional: xdg-utils (opens the user guide), srs-sysinfo's srs-root cache
+    (memory type / speed details), the ryzen_smu kernel driver (North Bridge
+    Clock on Ryzen 7000 desktop CPUs)
+
+Try it without installing
+  ./usr/bin/lsa-gui
+  ./usr/bin/lsa --version
+  The user guide is found beside the program (usr/share/doc/lsa-sysinfo).
+
+Install system-wide (recommended: /usr/local)
+  sudo cp -r usr/bin usr/share /usr/local/
+  sudo update-desktop-database /usr/local/share/applications 2>/dev/null || true
+  sudo gtk-update-icon-cache -f /usr/local/share/icons/hicolor 2>/dev/null || true
+
+  The "LSA User Guide (PDF)" menu entry opens /usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf.
+  After installing to /usr/local, point it there:
+    sudo sed -i 's|/usr/share/doc/|/usr/local/share/doc/|' /usr/local/share/applications/lsa-user-guide.desktop
+
+Uninstall: remove the same files from /usr/local (see the file list in this tarball).
+
+Arch Linux users: use the .pkg.tar.zst from the release or the AUR package lsa-sysinfo instead.

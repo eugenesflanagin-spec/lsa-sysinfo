@@ -1,0 +1,14 @@
+Document: lsa-sysinfo
+Title: LSA User Guide
+Author: Eugene Flanagin
+Abstract: User guide and result-by-result reference for the Linux System Audit
+ Cache & Memory Benchmark: the window, every result cell and system line, the
+ command line and a glossary.
+Section: System/Administration
+
+Format: PDF
+Files: /usr/share/doc/lsa-sysinfo/LSA-User-Guide.pdf
+
+Format: HTML
+Index: /usr/share/doc/lsa-sysinfo/html/LSA-User-Guide.html
+Files: /usr/share/doc/lsa-sysinfo/html/*.html
