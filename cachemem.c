@@ -419,6 +419,13 @@ void cm_format_bw(char *b, unsigned long n, int level, double v, int mib)
     else snprintf(b, n, "%.1f %s", v / 1000, mib ? "GiB/s" : "GB/s");
 }
 
+void cm_dram_ratio(char *b, unsigned long n, double mem_mhz, double fsb_mhz)
+{
+    double r = fsb_mhz > 0 ? mem_mhz / fsb_mhz : 0, w = (double)(long)(r + 0.5);
+    if (r - w < 0.05 && w - r < 0.05) snprintf(b, n, "DRAM:FSB %.0f:1", w);
+    else snprintf(b, n, "DRAM:FSB %.1f:1", r);
+}
+
 const char *cm_isa_name(int isa)
 {
     return isa == CM_ISA_AVX512 ? "AVX-512" : isa == CM_ISA_AVX2 ? "AVX2" : isa == CM_ISA_SSE2 ? "SSE2" : "auto";

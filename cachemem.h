@@ -45,6 +45,8 @@ double cm_measure_mhz(void);
 /* "65369 MB/s" for Memory; caches in GB/s: "2520.3 GB/s", "695.57 GB/s" (v is in MB/s) */
 void cm_format_bw(char *b, unsigned long n, int level, double mbs, int mib);
 const char *cm_isa_name(int isa);
+/* "DRAM:FSB 30:1" (whole ratio) or "DRAM:FSB 28.6:1" (memory clock / FSB, one decimal) */
+void cm_dram_ratio(char *b, unsigned long n, double mem_mhz, double fsb_mhz);
 int  cm_isa_best(void);
 int  cm_have_clzero(void);
 int  cm_large_pages(void);   /* 1 when 2 MB pages are available for the latency test */

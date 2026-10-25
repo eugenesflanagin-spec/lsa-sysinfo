@@ -7,10 +7,14 @@
 #endif
 #include "cachemem.h"
 #include <dirent.h>
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
+#include <x86intrin.h>
 
 static void rd1(const char *path, char *out, size_t n)
 {
@@ -26,6 +30,67 @@ static void trim(char *s)
     size_t l = strlen(s);
     while (l && (s[l - 1] == ' ' || s[l - 1] == '\n' || s[l - 1] == '\t')) s[--l] = 0;
     while (*s == ' ' || *s == '\t') memmove(s, s + 1, strlen(s));
+}
+
+static double mono_s(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t);
+    return t.tv_sec + t.tv_nsec * 1e-9;
+}
+
+/* TSC rate in MHz, timed against CLOCK_MONOTONIC_RAW over ~100 ms */
+static double tsc_mhz(void)
+{
+    struct timespec d = { 0, 100000000L };
+    double t0, t1;
+    unsigned long long c0, c1;
+    t0 = mono_s(); c0 = __rdtsc();
+    nanosleep(&d, NULL);
+    t1 = mono_s(); c1 = __rdtsc();
+    return t1 > t0 ? (double)(c1 - c0) / (t1 - t0) / 1e6 : 0;
+}
+
+/* Reference (bus) clock: the invariant TSC runs at the nominal (P0) clock, and ACPI CPPC
+   nominal_freq is that clock in MHz at a 100 MHz reference, so FSB = TSC x 100 / nominal_freq
+   (about 105 MHz with a 105 MHz eCLK). 0 when it cannot be measured. */
+static double fsb_mhz(int constant_tsc)
+{
+    char b[32];
+    double nom, f;
+    if (!constant_tsc) return 0;
+    rd1("/sys/devices/system/cpu/cpu0/acpi_cppc/nominal_freq", b, sizeof b);
+    if ((nom = atof(b)) <= 0) return 0;
+    f = tsc_mhz() * 100.0 / nom;
+    return f >= 50 && f <= 200 ? f : 0;
+}
+
+/* North Bridge clock = FCLK (Infinity Fabric) from the ryzen_smu driver's PM table. Only the
+   table layout 0x540104 (Zen 4 desktop) is known: FCLK is float 70 (UCLK 74, MEMCLK 78).
+   Read-only sysfs reads; LSA_RSMU_DIR overrides the directory (tests). */
+static void nb_clock(char *out, size_t n)
+{
+    const char *dir = getenv("LSA_RSMU_DIR");
+    char p[PATH_MAX];
+    unsigned char raw[4];
+    float t[2048];
+    uint32_t ver;
+    size_t got;
+    FILE *f;
+    if (!dir || !*dir) dir = "/sys/kernel/ryzen_smu_drv";
+    snprintf(p, sizeof p, "%s/pm_table_version", dir);
+    if (!(f = fopen(p, "rb"))) { snprintf(out, n, "n/a (ryzen_smu driver not loaded)"); return; }
+    got = fread(raw, 1, 4, f);
+    fclose(f);
+    if (got != 4) { snprintf(out, n, "n/a (ryzen_smu pm_table_version not readable)"); return; }
+    memcpy(&ver, raw, 4);
+    if (ver != 0x540104u) { snprintf(out, n, "n/a (PM table version 0x%06X not supported)", (unsigned)ver); return; }
+    snprintf(p, sizeof p, "%s/pm_table", dir);
+    if (!(f = fopen(p, "rb"))) { snprintf(out, n, "n/a (ryzen_smu pm_table not readable)"); return; }
+    got = fread(t, 1, sizeof t, f);
+    fclose(f);
+    if (got < 79 * sizeof(float) || !(t[70] >= 400 && t[70] <= 4000)) { snprintf(out, n, "n/a (ryzen_smu pm_table has no FCLK)"); return; }
+    snprintf(out, n, "%.1f MHz", t[70]);
 }
 
 static const char *count_word(int n)
@@ -167,8 +232,9 @@ static void dimms(int *count, int *mts, char *type, size_t tn, int *channels)
 void cm_get_info(cm_info *in, double mhz)
 {
     FILE *f = fopen("/proc/cpuinfo", "r");
-    char l[512], model[160] = "", vendor[64] = "", v[160], v2[160];
-    int fam = 0, mod = 0, step = 0, cores = 0, n, mts = 0, nch = 0;
+    char l[4096], model[160] = "", vendor[64] = "", v[160], v2[160];
+    int fam = 0, mod = 0, step = 0, cores = 0, n, mts = 0, nch = 0, ctsc = 0;
+    double fsb;
     char type[32];
     memset(in, 0, sizeof *in);
     if (f) {
@@ -183,6 +249,7 @@ void cm_get_info(cm_info *in, double mhz)
             else if (!strncmp(l, "model\t", 6)) mod = atoi(c);
             else if (!strncmp(l, "stepping", 8)) step = atoi(c);
             else if (!strncmp(l, "cpu cores", 9)) cores = atoi(c);
+            else if (!strncmp(l, "flags", 5)) ctsc = strstr(c, "constant_tsc") != NULL;
         }
         fclose(f);
     }
@@ -201,16 +268,18 @@ void cm_get_info(cm_info *in, double mhz)
         if (cn) snprintf(in->cpu_stepping, sizeof in->cpu_stepping, "%s, stepping %d  (family %Xh model %Xh)", cn, step, fam, mod);
         else snprintf(in->cpu_stepping, sizeof in->cpu_stepping, "Family %Xh, Model %Xh, Stepping %d", fam, mod, step);
     }
+    fsb = fsb_mhz(ctsc);
+    if (fsb > 0) snprintf(in->cpu_fsb, sizeof in->cpu_fsb, "%.1f MHz", fsb);
+    else { fsb = 100.0; snprintf(in->cpu_fsb, sizeof in->cpu_fsb, "100.0 MHz (nominal)"); }
     if (mhz > 0) {
         snprintf(in->cpu_clock, sizeof in->cpu_clock, "%.1f MHz", mhz);
-        snprintf(in->cpu_fsb, sizeof in->cpu_fsb, "100.0 MHz");
-        snprintf(in->cpu_mult, sizeof in->cpu_mult, "%.2fx", mhz / 100.0);
+        snprintf(in->cpu_mult, sizeof in->cpu_mult, "%.2fx", mhz / fsb);
     }
-    snprintf(in->nb_clock, sizeof in->nb_clock, "n/a (needs SMU access - not read)");
+    nb_clock(in->nb_clock, sizeof in->nb_clock);
     dimms(&n, &mts, type, sizeof type, &nch);
     if (mts > 0) {
         snprintf(in->mem_bus, sizeof in->mem_bus, "%.1f MHz", mts / 2.0);
-        snprintf(in->dram_ratio, sizeof in->dram_ratio, "DRAM:FSB %d:1", (int)(mts / 2.0 / 100.0 + 0.5));
+        cm_dram_ratio(in->dram_ratio, sizeof in->dram_ratio, mts / 2.0, fsb);
         snprintf(in->mem_type, sizeof in->mem_type, "%s%s%s-%d SDRAM  (%d DIMM%s)", count_word(nch) ? count_word(nch) : "",
                  nch > 0 ? " Channel " : "", type[0] ? type : "DRAM", mts, n, n == 1 ? "" : "s");
     } else {

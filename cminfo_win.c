@@ -152,14 +152,14 @@ void cm_get_info(cm_info *in, double mhz)
     }
     if (mhz > 0) {
         snprintf(in->cpu_clock, sizeof in->cpu_clock, "%.1f MHz", mhz);
-        snprintf(in->cpu_fsb, sizeof in->cpu_fsb, "100.0 MHz");
         snprintf(in->cpu_mult, sizeof in->cpu_mult, "%.2fx", mhz / 100.0);
     }
+    snprintf(in->cpu_fsb, sizeof in->cpu_fsb, "100.0 MHz (nominal)");   /* not measured on Windows */
     snprintf(in->nb_clock, sizeof in->nb_clock, "n/a (needs SMU access - not read)");
     read_smbios(&s);
     if (s.mts > 0) {
         snprintf(in->mem_bus, sizeof in->mem_bus, "%.1f MHz", s.mts / 2.0);
-        snprintf(in->dram_ratio, sizeof in->dram_ratio, "DRAM:FSB %d:1", (int)(s.mts / 2.0 / 100.0 + 0.5));
+        cm_dram_ratio(in->dram_ratio, sizeof in->dram_ratio, s.mts / 2.0, 100.0);
         snprintf(in->mem_type, sizeof in->mem_type, "%s%s%s-%d SDRAM  (%d DIMM%s)", count_word(s.channels) ? count_word(s.channels) : "",
                  s.channels > 0 ? " Channel " : "", s.mem_type[0] ? s.mem_type : "DRAM", s.mts, s.dimms, s.dimms == 1 ? "" : "s");
     } else {
