@@ -1,5 +1,7 @@
 # Linux System Audit (lsa-sysinfo)
 
+> **LSA is now part of SRS.** From [SRS](https://github.com/eugenesflanagin-spec/srs-sysinfo) 2.2.0 the Cache & Memory benchmark (same measuring engine) is on SRS's Benchmarks & stress page and in `sysreport-search cachemem`. On Arch, the `lsa-sysinfo` AUR package is now a small transitional package that installs SRS and keeps the `lsa` and `lsa-gui` commands working. This repository and all its releases, including the Windows build, stay available.
+
 LSA is a clean-room Linux implementation of AIDA64 Business's Cache & Memory Benchmark, built to
 produce results 1:1 with the native Windows app. On the reference system (Ryzen 7 7800X3D,
 DDR5-6000, FCLK 2000) every cell - memory read / write / copy / latency and L1 / L2 / L3 - lands
